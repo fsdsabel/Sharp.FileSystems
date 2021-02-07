@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sharp.FileSystems.Abstractions\Sharp.FileSystems.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="SMBLibrary">
+      <HintPath>..\..\..\Projekte_NoBackup\SMBLibrary\SMBLibrary\bin\Debug\netstandard2.0\SMBLibrary.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
