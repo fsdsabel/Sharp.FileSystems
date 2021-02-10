@@ -6,7 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 
-namespace FileSystem.Smb.Internal
+namespace Sharp.FileSystem.Smb.Internal
 {
 
 
@@ -19,7 +19,7 @@ namespace FileSystem.Smb.Internal
         protected SmbClient(string path)
         {
             _connectionKey = MakeKey(path);
-            Client = new SMB2Client();            
+            Client = new SMB2Client();
             var uri = new Uri(path);
             IPAddress ip = null;
             int retry = 0;
@@ -30,7 +30,7 @@ namespace FileSystem.Smb.Internal
                 retry++;
             }
             Sharename = SharenameFromUri(uri);
-            if (!Client.Connect(ip, SMBLibrary.SMBTransportType.DirectTCPTransport))
+            if (!Client.Connect(ip, SMBTransportType.DirectTCPTransport))
             {
                 throw new IOException("Cannot connect to SMB host.");
             }
@@ -45,16 +45,16 @@ namespace FileSystem.Smb.Internal
 
         public static string SharenameFromUri(Uri uri)
         {
-            return uri.AbsolutePath.Split('/').Skip(1).FirstOrDefault(); 
+            return uri.AbsolutePath.Split('/').Skip(1).FirstOrDefault();
         }
 
         private static int _poolVersion;
 
         public static SmbClient GetSmbClient(string path)
         {
-            
+
             var client = SmbConnectionPool.Remove(MakeKey(path), 5, out _poolVersion);
-            if(client == null)
+            if (client == null)
             {
                 client = new SmbClient(path);
             }
@@ -75,6 +75,8 @@ namespace FileSystem.Smb.Internal
 
         public IEnumerable<FileDirectoryInformation> EnumerateFileEntries(string path, string searchPattern, SearchOption searchOption)
         {
+            if (path.StartsWith("/")) path = path.Substring(1);
+
             ThrowOnError(FileStore.CreateFile(
                    out var directoryHandle,
                    out var fileStatus,
@@ -88,7 +90,7 @@ namespace FileSystem.Smb.Internal
 
             List<QueryDirectoryFileInformation> fileList;
             var status = FileStore.QueryDirectory(out fileList, directoryHandle, searchPattern, FileInformationClass.FileDirectoryInformation);
-            
+
             var result = fileList
                 .OfType<FileDirectoryInformation>()
                 .Where(f => f.FileName != "." && f.FileName != "..")
@@ -125,7 +127,7 @@ namespace FileSystem.Smb.Internal
         public void CreateDirectory(string directoryName)
         {
             object directoryHandle = null;
-            SMBLibrary.FileStatus fileStatus;
+            FileStatus fileStatus;
 
             string currentDir = "";
             foreach (var part in directoryName.Split('/'))
@@ -135,11 +137,11 @@ namespace FileSystem.Smb.Internal
                     out directoryHandle,
                     out fileStatus,
                     currentDir,
-                    SMBLibrary.AccessMask.GENERIC_WRITE | SMBLibrary.AccessMask.SYNCHRONIZE,
+                    AccessMask.GENERIC_WRITE | AccessMask.SYNCHRONIZE,
                     SMBLibrary.FileAttributes.Directory,
-                    SMBLibrary.ShareAccess.Delete | ShareAccess.Read | ShareAccess.Write,
-                    SMBLibrary.CreateDisposition.FILE_OPEN_IF,
-                    SMBLibrary.CreateOptions.FILE_DIRECTORY_FILE | SMBLibrary.CreateOptions.FILE_SYNCHRONOUS_IO_ALERT,
+                    ShareAccess.Delete | ShareAccess.Read | ShareAccess.Write,
+                    CreateDisposition.FILE_OPEN_IF,
+                    CreateOptions.FILE_DIRECTORY_FILE | CreateOptions.FILE_SYNCHRONOUS_IO_ALERT,
                     null));
                 if (fileStatus != FileStatus.FILE_CREATED && fileStatus != FileStatus.FILE_OPENED)
                 {
@@ -168,7 +170,7 @@ namespace FileSystem.Smb.Internal
                 {
                     CloseFile(handle);
                 }
-            }            
+            }
         }
 
         public void SetFileInformation(string filename, bool isDirectory, FileInformation fileInformation, object handle = null)
@@ -192,16 +194,16 @@ namespace FileSystem.Smb.Internal
         }
 
         public object OpenFile(
-            string filename, 
-            bool isDirectory, 
-            FileMode fileMode = FileMode.Open, 
-            FileAccess fileAccess = FileAccess.Read, 
+            string filename,
+            bool isDirectory,
+            FileMode fileMode = FileMode.Open,
+            FileAccess fileAccess = FileAccess.Read,
             FileShare fileShare = FileShare.None,
             bool forDeletion = false)
         {
             AccessMask accessMask = 0;
-            if (fileAccess==FileAccess.Read) accessMask |= AccessMask.GENERIC_READ;
-            if (fileAccess==FileAccess.Write) accessMask |= AccessMask.GENERIC_WRITE;
+            if (fileAccess == FileAccess.Read) accessMask |= AccessMask.GENERIC_READ;
+            if (fileAccess == FileAccess.Write) accessMask |= AccessMask.GENERIC_WRITE;
             if (fileAccess == FileAccess.ReadWrite) accessMask |= AccessMask.GENERIC_WRITE | AccessMask.GENERIC_READ;
 
             if (forDeletion) accessMask |= AccessMask.DELETE;
@@ -211,14 +213,14 @@ namespace FileSystem.Smb.Internal
             if (fileShare == FileShare.Delete) shareAccess |= ShareAccess.Delete;
             if (fileShare == FileShare.Write) shareAccess |= ShareAccess.Write;
             if (fileShare == FileShare.ReadWrite) shareAccess |= ShareAccess.Write | ShareAccess.Read;
-            
+
             CreateDisposition createDisposition = CreateDisposition.FILE_SUPERSEDE;
-            if (fileMode==FileMode.CreateNew) createDisposition = CreateDisposition.FILE_CREATE;
-            if (fileMode==FileMode.Create) createDisposition = CreateDisposition.FILE_SUPERSEDE;
-            if (fileMode==FileMode.Open) createDisposition = CreateDisposition.FILE_OPEN;
-            if (fileMode==FileMode.OpenOrCreate) createDisposition = CreateDisposition.FILE_OPEN_IF;
-            if (fileMode==FileMode.Truncate) createDisposition = CreateDisposition.FILE_OVERWRITE_IF;
-            if (fileMode==FileMode.Append) createDisposition = CreateDisposition.FILE_OPEN;
+            if (fileMode == FileMode.CreateNew) createDisposition = CreateDisposition.FILE_CREATE;
+            if (fileMode == FileMode.Create) createDisposition = CreateDisposition.FILE_SUPERSEDE;
+            if (fileMode == FileMode.Open) createDisposition = CreateDisposition.FILE_OPEN;
+            if (fileMode == FileMode.OpenOrCreate) createDisposition = CreateDisposition.FILE_OPEN_IF;
+            if (fileMode == FileMode.Truncate) createDisposition = CreateDisposition.FILE_OVERWRITE_IF;
+            if (fileMode == FileMode.Append) createDisposition = CreateDisposition.FILE_OPEN;
 
             CreateOptions createOptions = 0;
             if (isDirectory)
@@ -232,7 +234,7 @@ namespace FileSystem.Smb.Internal
 
 
             object fileHandle;
-            SMBLibrary.FileStatus fileStatus;
+            FileStatus fileStatus;
             ThrowOnError(FileStore.CreateFile(
                 out fileHandle,
                 out fileStatus,
@@ -249,7 +251,7 @@ namespace FileSystem.Smb.Internal
 
         public void DeleteFile(string fileName, bool isDirectory, bool recursive)
         {
-            if(recursive && isDirectory)
+            if (recursive && isDirectory)
             {
                 foreach (var item in EnumerateFileEntries(fileName, "*", SearchOption.TopDirectoryOnly))
                 {
@@ -259,9 +261,9 @@ namespace FileSystem.Smb.Internal
 
             var handle = OpenFile(fileName, isDirectory, FileMode.Open, FileAccess.ReadWrite, FileShare.None, true);
             FileDispositionInformation fileDispositionInformation = new FileDispositionInformation();
-            fileDispositionInformation.DeletePending = true;            
-            ThrowOnError(FileStore.SetFileInformation(handle, fileDispositionInformation));            
-            ThrowOnError(FileStore.CloseFile(handle));            
+            fileDispositionInformation.DeletePending = true;
+            ThrowOnError(FileStore.SetFileInformation(handle, fileDispositionInformation));
+            ThrowOnError(FileStore.CloseFile(handle));
         }
 
         public void CloseFile(object handle)
@@ -303,7 +305,7 @@ namespace FileSystem.Smb.Internal
 
         ~SmbClient()
         {
-            Dispose(false);        
+            Dispose(false);
         }
     }
 }

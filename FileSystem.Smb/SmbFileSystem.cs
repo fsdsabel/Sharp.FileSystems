@@ -1,9 +1,9 @@
 ﻿using Sharp.FileSystems.Abstractions;
 
-namespace FileSystem.Smb
+namespace Sharp.FileSystem.Smb
 {
     public class SmbFileSystem : IFileSystem
-    {   
+    {
         public SmbFileSystem()
         {
             Directory = new SmbDirectory(this);
@@ -13,7 +13,7 @@ namespace FileSystem.Smb
         }
 
         public IFile File { get; }
-        public IDirectory Directory { get; } 
+        public IDirectory Directory { get; }
         public IFileInfoFactory FileInfo { get; }
         public IFileStreamFactory FileStream { get; }
         public IPath Path { get; }

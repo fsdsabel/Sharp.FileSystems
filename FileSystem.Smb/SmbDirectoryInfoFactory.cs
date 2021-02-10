@@ -1,6 +1,6 @@
 ﻿using Sharp.FileSystems.Abstractions;
 
-namespace FileSystem.Smb
+namespace Sharp.FileSystem.Smb
 {
     internal class SmbDirectoryInfoFactory : IDirectoryInfoFactory
     {
@@ -14,7 +14,9 @@ namespace FileSystem.Smb
         public IDirectoryInfo FromDirectoryName(string directoryName)
         {
             var info = new SmbDirectoryInfo(_fileSystem, directoryName);
+
             info.Refresh();
+
             return info;
         }
     }

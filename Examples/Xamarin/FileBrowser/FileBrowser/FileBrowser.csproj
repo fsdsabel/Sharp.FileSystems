@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Fonts\Font Awesome 5 Brands-Regular-400.otf" />
+    <None Remove="Fonts\Font Awesome 5 Free-Regular-400.otf" />
+    <None Remove="Fonts\Font Awesome 5 Free-Solid-900.otf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Fonts\Font Awesome 5 Brands-Regular-400.otf" />
+    <EmbeddedResource Include="Fonts\Font Awesome 5 Free-Regular-400.otf" />
+    <EmbeddedResource Include="Fonts\Font Awesome 5 Free-Solid-900.otf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Prism.Forms" Version="8.0.0.1909" />
+    <PackageReference Include="Xamarin.Forms" Version="4.8.0.1451" />
+    <PackageReference Include="Xamarin.Essentials" Version="1.5.3.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\FileSystem.Smb\Sharp.FileSystem.Smb.csproj" />
+    <ProjectReference Include="..\..\..\..\Sharp.Filesystem.Smb.Discovery\Sharp.FileSystem.Smb.Discovery.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="FileSystem\FileBrowserView.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="FileSystem\FileSystemBrowserView.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+</Project>

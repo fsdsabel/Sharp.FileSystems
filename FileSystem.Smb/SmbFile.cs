@@ -5,11 +5,11 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace FileSystem.Smb
+namespace Sharp.FileSystem.Smb
 {
     internal class SmbFile : IFile
     {
-        public SmbFile(IFileSystem fileSystem) 
+        public SmbFile(IFileSystem fileSystem)
         {
             FileSystem = fileSystem;
         }
@@ -26,7 +26,7 @@ namespace FileSystem.Smb
             var stream = FileSystem.FileInfo.FromFileName(path).Open(FileMode.Append, FileAccess.Write);
             stream.Position = stream.Length;
             using (var writer = new StreamWriter(stream, encoding))
-            {                
+            {
                 foreach (var line in contents)
                 {
                     writer.WriteLine(line);
@@ -44,7 +44,7 @@ namespace FileSystem.Smb
             var stream = FileSystem.FileInfo.FromFileName(path).Open(FileMode.Append, FileAccess.Write);
             stream.Position = stream.Length;
             using (var writer = new StreamWriter(stream, encoding))
-            {                
+            {
                 writer.Write(contents);
             }
         }
@@ -157,7 +157,7 @@ namespace FileSystem.Smb
 
         public void Move(string sourceFileName, string destFileName)
         {
-            FileSystem.FileInfo.FromFileName(sourceFileName).MoveTo(destFileName);            
+            FileSystem.FileInfo.FromFileName(sourceFileName).MoveTo(destFileName);
         }
 
         public Stream Open(string path, FileMode mode)
@@ -240,7 +240,7 @@ namespace FileSystem.Smb
             using (var reader = new StreamReader(FileSystem.FileInfo.FromFileName(path).Open(FileMode.Open, FileAccess.Read), encoding))
             {
                 string line;
-                while((line = reader.ReadLine()) != null)
+                while ((line = reader.ReadLine()) != null)
                 {
                     yield return line;
                 }
@@ -299,7 +299,7 @@ namespace FileSystem.Smb
         {
             using (var writer = new StreamWriter(OpenWrite(path), encoding))
             {
-                foreach(var line in contents)
+                foreach (var line in contents)
                 {
                     writer.WriteLine(line);
                 }
@@ -313,7 +313,7 @@ namespace FileSystem.Smb
 
         public void WriteAllLines(string path, string[] contents, Encoding encoding)
         {
-            WriteAllLines(path, (IEnumerable<string>) contents, encoding);
+            WriteAllLines(path, (IEnumerable<string>)contents, encoding);
         }
 
         public void WriteAllText(string path, string contents)
@@ -322,7 +322,7 @@ namespace FileSystem.Smb
         }
 
         public void WriteAllText(string path, string contents, Encoding encoding)
-        {            
+        {
             using (var writer = new StreamWriter(OpenWrite(path), encoding))
             {
                 writer.Write(contents);

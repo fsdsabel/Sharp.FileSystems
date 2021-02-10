@@ -1,12 +1,13 @@
 ﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Sharp.FileSystem.Smb;
 using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 
-namespace FileSystem.Smb.Tests
+namespace Sharp.FileSystem.Smb.Tests
 {
     [TestClass]
     public class SmbFileTests
@@ -214,7 +215,7 @@ namespace FileSystem.Smb.Tests
         [DataTestMethod]
         [TestShare]
         public void Can_copy_file_with_overwrite(ShareType shareType)
-        {            
+        {
             var fs = new SmbFileSystem();
             CreateTestFolder(shareType);
             var srcFilename = TestHelpers.ShareUri($"{TestFolder}/source.txt", shareType);
@@ -231,7 +232,7 @@ namespace FileSystem.Smb.Tests
 
         [DataTestMethod]
         [TestShare]
-        [ExpectedException(typeof(System.IO.IOException))]
+        [ExpectedException(typeof(SmbIOException))]
         public void Cannot_copy_file_without_overwrite_when_existing(ShareType shareType)
         {
             var fs = new SmbFileSystem();
@@ -261,6 +262,22 @@ namespace FileSystem.Smb.Tests
 
             fs.File.Exists(srcFilename).Should().BeFalse("file has been moved");
             fs.File.ReadAllText(dstFilename).Should().Be("test");
+        }
+
+        [DataTestMethod]
+        [TestShare]
+        public void Can_create_file_with_spaces(ShareType shareType)
+        {
+            var fs = new SmbFileSystem();
+            CreateTestFolder(shareType);
+            var filename = TestHelpers.ShareUri($"{TestFolder}/source and spaces.txt", shareType);
+
+            fs.File.WriteAllText(filename, "test");
+
+            fs.File.Exists(filename).Should().BeTrue();
+
+            var info = fs.FileInfo.FromFileName(filename);
+            info.Name.Should().Be("source and spaces.txt");
         }
     }
 }

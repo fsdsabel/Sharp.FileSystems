@@ -1,0 +1,59 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ContentView xmlns="http://xamarin.com/schemas/2014/forms" 
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
+             xmlns:filesystem="clr-namespace:FileBrowser.FileSystem" 
+             xmlns:font="clr-namespace:FileBrowser.Fonts" 
+             
+             x:Class="FileBrowser.FileSystem.FileBrowserView">
+    <ContentView.Resources>
+        <DataTemplate x:Key="FileTemplate">
+            <StackLayout Orientation="Horizontal" Margin="0,2">               
+                <Image WidthRequest="50" HorizontalOptions="Center" VerticalOptions="Center"  Margin="2">
+                    <Image.Source>
+                        <FontImageSource FontFamily="{Binding IconFont}"
+                                         Glyph="{Binding Icon}"
+                                         Size="44"
+                                         Color="Black"/>
+                    </Image.Source>
+                </Image>
+                <Label x:Name="Label" Text="{Binding Name}"  
+                       VerticalTextAlignment="Center">
+                    
+                </Label>
+            </StackLayout>
+
+        </DataTemplate>
+        <DataTemplate x:Key="DirectoryTemplate">
+            <StackLayout Orientation="Horizontal" Margin="0,2">
+                <Image WidthRequest="50" HorizontalOptions="Center" VerticalOptions="Center" Margin="2">
+                    <Image.Source>
+                        <FontImageSource FontFamily="{Binding IconFont}"
+                                         Glyph="{Binding Icon}"
+                                         Size="44"
+                                         Color="Black"/>
+                    </Image.Source>
+                </Image>
+                <Label Text="{Binding Name}" 
+                       VerticalTextAlignment="Center"/>
+                
+            </StackLayout>
+            
+        </DataTemplate>
+        <filesystem:FileSystemItemTemplateSelector x:Key="FileSystemItemTemplateSelector"
+                                                   FileTemplate="{StaticResource FileTemplate}"
+                                                   DirectoryTemplate="{StaticResource DirectoryTemplate}" 
+                                                   />
+
+
+    </ContentView.Resources>
+  <ContentView.Content>
+        <RefreshView x:Name="RefreshView">
+            <CollectionView x:Name="Files" 
+                      ItemTemplate="{StaticResource FileSystemItemTemplateSelector}"
+                      SelectionMode="Single"
+                      >
+
+            </CollectionView>
+        </RefreshView>
+    </ContentView.Content>
+</ContentView>

@@ -1,7 +1,7 @@
 ﻿using SMBLibrary;
 using System.IO;
 
-namespace FileSystem.Smb
+namespace Sharp.FileSystem.Smb
 {
     public class SmbIOException : IOException
     {

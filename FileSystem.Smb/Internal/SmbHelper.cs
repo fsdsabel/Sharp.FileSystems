@@ -1,4 +1,4 @@
-﻿namespace FileSystem.Smb.Internal
+﻿namespace Sharp.FileSystem.Smb.Internal
 {
     static class SmbHelper
     {

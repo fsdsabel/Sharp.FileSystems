@@ -1,11 +1,11 @@
-﻿using FileSystem.Smb.Internal;
+﻿using Sharp.FileSystem.Smb.Internal;
 using Sharp.FileSystems.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace FileSystem.Smb
+namespace Sharp.FileSystem.Smb
 {
     internal class SmbDirectoryInfo : IDirectoryInfo
     {
@@ -24,13 +24,13 @@ namespace FileSystem.Smb
             FileSystem = fileSystem;
             _directoryName = directoryName;
             _uri = new Uri(directoryName);
-            FullName = string.Join("", _uri.Segments.Skip(2));
-            if(string.IsNullOrEmpty(FullName))
+            FullName = Uri.UnescapeDataString(string.Join("", _uri.Segments.Skip(2)));
+            if (string.IsNullOrEmpty(FullName))
             {
                 FullName = "/";
             }
         }
-               
+
 
         private string ChangePathOfCurrentUri(string path)
         {
@@ -43,8 +43,8 @@ namespace FileSystem.Smb
             return uriBuilder.Uri.ToString();
         }
 
-        public IDirectoryInfo Parent 
-        { 
+        public IDirectoryInfo Parent
+        {
             get
             {
                 var parts = FullName.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries).ToList();
@@ -54,16 +54,16 @@ namespace FileSystem.Smb
             }
         }
         public IDirectoryInfo Root
-        { 
+        {
             get
             {
-                return FileSystem.DirectoryInfo.FromDirectoryName(ChangePathOfCurrentUri("") +"/");
+                return FileSystem.DirectoryInfo.FromDirectoryName(ChangePathOfCurrentUri("") + "/");
             }
         }
         public IFileSystem FileSystem { get; }
-        public FileAttributes Attributes 
-        { 
-            get => _attributes; 
+        public FileAttributes Attributes
+        {
+            get => _attributes;
             set
             {
                 using (var client = SmbClient.GetSmbClient(_directoryName))
@@ -126,14 +126,16 @@ namespace FileSystem.Smb
         private SmbDirectoryInfo CreateChildDirectoryInfo(string absolutePath)
         {
             var builder = new UriBuilder(_uri);
-            builder.Path = _uri.AbsolutePath.Substring(0, _uri.AbsolutePath.Substring(1).IndexOf('/') + 1) + "/" + absolutePath;
+            // keep share (first part)
+            builder.Path = Path.Combine(string.Join("", _uri.Segments.Take(2)), absolutePath);
             return new SmbDirectoryInfo(FileSystem, builder.Uri.ToString());
         }
 
         private SmbFileInfo CreateChildFileInfo(string absolutePath)
         {
             var builder = new UriBuilder(_uri);
-            builder.Path = _uri.AbsolutePath.Substring(0, _uri.AbsolutePath.Substring(1).IndexOf('/') + 1) + "/" + absolutePath;
+            // keep share (first part)            
+            builder.Path = Path.Combine(string.Join("", _uri.Segments.Take(2)), absolutePath);
             return new SmbFileInfo(FileSystem, builder.Uri.ToString());
         }
 
@@ -158,7 +160,7 @@ namespace FileSystem.Smb
 
         public void Delete(bool recursive)
         {
-            using(var client = SmbClient.GetSmbClient(_directoryName))
+            using (var client = SmbClient.GetSmbClient(_directoryName))
             {
                 try
                 {
@@ -188,7 +190,7 @@ namespace FileSystem.Smb
             using (var client = SmbClient.GetSmbClient(_directoryName))
             {
                 return client.EnumerateFileEntries(FullName, searchPattern, searchOption)
-                    .Select(f => CreateChildDirectoryInfo(f.FileName));                
+                    .Select(f => CreateChildDirectoryInfo(f.FileName));
             }
         }
 
@@ -226,8 +228,15 @@ namespace FileSystem.Smb
         {
             using (var client = SmbClient.GetSmbClient(_directoryName))
             {
-                return client.EnumerateFileEntries(FullName, searchPattern, searchOption)                    
-                    .Select(f => CreateChildFileInfo(f.FileName));
+                return client.EnumerateFileEntries(FullName, searchPattern, searchOption)
+                    .Select(f =>
+                    {
+                        if (f.FileAttributes.HasFlag(SMBLibrary.FileAttributes.Directory))
+                        {
+                            return (IFileSystemInfo)CreateChildDirectoryInfo(f.FileName);
+                        }
+                        return CreateChildFileInfo(f.FileName);
+                    });
             }
         }
 

@@ -1,9 +1,9 @@
-﻿using FileSystem.Smb.Internal;
+﻿using Sharp.FileSystem.Smb.Internal;
 using Sharp.FileSystems.Abstractions;
 using System;
 using System.IO;
 
-namespace FileSystem.Smb
+namespace Sharp.FileSystem.Smb
 {
 
     internal class SmbFileInfo : IFileInfo
@@ -23,7 +23,7 @@ namespace FileSystem.Smb
             FileSystem = fileSystem;
             _fileName = fileName;
             _uri = new Uri(fileName);
-            FullName = _uri.AbsolutePath.Substring(_uri.AbsolutePath.Substring(1).IndexOf('/') + 2);
+            FullName = Uri.UnescapeDataString(_uri.AbsolutePath.Substring(_uri.AbsolutePath.Substring(1).IndexOf('/') + 2));
         }
 
         public IDirectoryInfo Directory { get; }
@@ -31,12 +31,12 @@ namespace FileSystem.Smb
         public bool IsReadOnly { get; set; }
         public long Length { get; }
         public IFileSystem FileSystem { get; }
-        public System.IO.FileAttributes Attributes
+        public FileAttributes Attributes
         {
             get => _attributes;
             set
             {
-                using(var client = SmbClient.GetSmbClient(_fileName))
+                using (var client = SmbClient.GetSmbClient(_fileName))
                 {
                     var fi = new SMBLibrary.FileBasicInformation();
                     fi.FileAttributes = SmbHelper.MapFileAttributes(value);
@@ -57,14 +57,14 @@ namespace FileSystem.Smb
             field = value;
         }
 
-        public DateTime CreationTime 
-        { 
+        public DateTime CreationTime
+        {
             get => _creationTime;
-            set => SetTime(ref _creationTime, value, fi => fi.CreationTime = value.ToUniversalTime()); 
+            set => SetTime(ref _creationTime, value, fi => fi.CreationTime = value.ToUniversalTime());
         }
-        public DateTime CreationTimeUtc 
-        { 
-            get => _creationTimeUtc; 
+        public DateTime CreationTimeUtc
+        {
+            get => _creationTimeUtc;
             set => SetTime(ref _creationTime, value, fi => fi.CreationTime = value);
         }
         public bool Exists
@@ -73,23 +73,23 @@ namespace FileSystem.Smb
         }
         public string Extension => Path.GetExtension(FullName);
         public string FullName { get; }
-        public DateTime LastAccessTime 
-        { 
+        public DateTime LastAccessTime
+        {
             get => _lastAccessTime;
             set => SetTime(ref _lastAccessTime, value, fi => fi.LastAccessTime = value.ToUniversalTime());
         }
-        public DateTime LastAccessTimeUtc 
-        { 
+        public DateTime LastAccessTimeUtc
+        {
             get => _lastAccessTimeUtc;
             set => SetTime(ref _lastAccessTime, value, fi => fi.LastAccessTime = value);
         }
-        public DateTime LastWriteTime 
-        { 
+        public DateTime LastWriteTime
+        {
             get => _lastWriteTime;
             set => SetTime(ref _lastWriteTime, value, fi => fi.LastWriteTime = value.ToUniversalTime());
         }
-        public DateTime LastWriteTimeUtc 
-        { 
+        public DateTime LastWriteTimeUtc
+        {
             get => _lastWriteTimeUtc;
             set => SetTime(ref _lastWriteTime, value, fi => fi.LastWriteTime = value);
         }
@@ -138,7 +138,7 @@ namespace FileSystem.Smb
 
         public void Delete()
         {
-            using(var client = SmbClient.GetSmbClient(_fileName))
+            using (var client = SmbClient.GetSmbClient(_fileName))
             {
                 try
                 {

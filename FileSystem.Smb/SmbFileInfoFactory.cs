@@ -1,6 +1,6 @@
 ﻿using Sharp.FileSystems.Abstractions;
 
-namespace FileSystem.Smb
+namespace Sharp.FileSystem.Smb
 {
     internal class SmbFileInfoFactory : IFileInfoFactory
     {

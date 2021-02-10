@@ -1,9 +1,8 @@
-﻿using FileSystem.Smb.Internal;
-using SMBLibrary;
+﻿using SMBLibrary;
 using System;
 using System.IO;
 
-namespace FileSystem.Smb
+namespace Sharp.FileSystem.Smb.Internal
 {
     class SmbStream : Stream
     {
@@ -21,8 +20,8 @@ namespace FileSystem.Smb
         public override bool CanRead => _fileAccess.HasFlag(FileAccess.Read);
         public override bool CanSeek => true;
         public override bool CanWrite => _fileAccess.HasFlag(FileAccess.Write);
-        public override long Length 
-        { 
+        public override long Length
+        {
             get
             {
                 return _cifsClient.GetFileInformation(null, false, _handle).StandardInformation.EndOfFile;
@@ -45,14 +44,14 @@ namespace FileSystem.Smb
                 {
                     var status = _cifsClient.FileStore.ReadFile(out var data, _handle, Position, Math.Min(toread, maxReadSize));
 
-                    if(status == NTStatus.STATUS_END_OF_FILE)
+                    if (status == NTStatus.STATUS_END_OF_FILE)
                     {
                         return read;
                     }
 
                     _cifsClient.ThrowOnError(status);
 
-                    Array.Copy(data, 0, buffer, offset + read,  data.Length);
+                    Array.Copy(data, 0, buffer, offset + read, data.Length);
                     read += data.Length;
                     Position += data.Length;
                     toread -= data.Length;
@@ -67,7 +66,7 @@ namespace FileSystem.Smb
 
         public override long Seek(long offset, SeekOrigin origin)
         {
-            switch(origin)
+            switch (origin)
             {
                 case SeekOrigin.Begin:
                     Position = offset;
@@ -102,7 +101,7 @@ namespace FileSystem.Smb
                 {
                     var tempbuffer = new byte[Math.Min(towrite, _cifsClient.FileStore.MaxWriteSize)];
                     Array.Copy(buffer, offset + written, tempbuffer, 0, tempbuffer.Length);
-                    
+
                     try
                     {
                         _cifsClient.ThrowOnError(_cifsClient.FileStore.WriteFile(out var bytesWritten, _handle, Position, tempbuffer));

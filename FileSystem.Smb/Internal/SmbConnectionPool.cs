@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 
-namespace FileSystem.Smb.Internal
+namespace Sharp.FileSystem.Smb.Internal
 {
     #region Connection Pool Subsystem & Default Implementation
     /// <summary>
@@ -146,45 +146,45 @@ namespace FileSystem.Smb.Internal
             ref int totalCount
             )
         {
-                lock (_syncRoot)
+            lock (_syncRoot)
+            {
+                openCount = _poolOpened;
+                closeCount = _poolClosed;
+
+                if (counts == null)
                 {
-                    openCount = _poolOpened;
-                    closeCount = _poolClosed;
+                    counts = new Dictionary<string, int>(
+                        StringComparer.OrdinalIgnoreCase);
+                }
 
-                    if (counts == null)
+                if (fileName != null)
+                {
+                    PoolQueue queue;
+
+                    if (_queueList.TryGetValue(fileName, out queue))
                     {
-                        counts = new Dictionary<string, int>(
-                            StringComparer.OrdinalIgnoreCase);
-                    }
+                        Queue<WeakReference> poolQueue = queue.Queue;
+                        int count = poolQueue != null ? poolQueue.Count : 0;
 
-                    if (fileName != null)
+                        counts.Add(fileName, count);
+                        totalCount += count;
+                    }
+                }
+                else
+                {
+                    foreach (KeyValuePair<string, PoolQueue> pair in _queueList)
                     {
-                        PoolQueue queue;
+                        if (pair.Value == null)
+                            continue;
 
-                        if (_queueList.TryGetValue(fileName, out queue))
-                        {
-                            Queue<WeakReference> poolQueue = queue.Queue;
-                            int count = (poolQueue != null) ? poolQueue.Count : 0;
+                        Queue<WeakReference> poolQueue = pair.Value.Queue;
+                        int count = poolQueue != null ? poolQueue.Count : 0;
 
-                            counts.Add(fileName, count);
-                            totalCount += count;
-                        }
+                        counts.Add(pair.Key, count);
+                        totalCount += count;
                     }
-                    else
-                    {
-                        foreach (KeyValuePair<string, PoolQueue> pair in _queueList)
-                        {
-                            if (pair.Value == null)
-                                continue;
+                }
 
-                            Queue<WeakReference> poolQueue = pair.Value.Queue;
-                            int count = (poolQueue != null) ? poolQueue.Count : 0;
-
-                            counts.Add(pair.Key, count);
-                            totalCount += count;
-                        }
-                    }
-                
             }
         }
 
@@ -199,34 +199,34 @@ namespace FileSystem.Smb.Internal
         /// </param>
         internal static void ClearPool(string fileName)
         {
-                lock (_syncRoot)
+            lock (_syncRoot)
+            {
+                PoolQueue queue;
+
+                if (_queueList.TryGetValue(fileName, out queue))
                 {
-                    PoolQueue queue;
+                    queue.PoolVersion++;
 
-                    if (_queueList.TryGetValue(fileName, out queue))
+                    Queue<WeakReference> poolQueue = queue.Queue;
+                    if (poolQueue == null) return;
+
+                    while (poolQueue.Count > 0)
                     {
-                        queue.PoolVersion++;
+                        WeakReference connection = poolQueue.Dequeue();
 
-                        Queue<WeakReference> poolQueue = queue.Queue;
-                        if (poolQueue == null) return;
-
-                        while (poolQueue.Count > 0)
-                        {
-                            WeakReference connection = poolQueue.Dequeue();
-
-                            if (connection == null) continue;
+                        if (connection == null) continue;
 
                         SmbClient handle =
                                 connection.Target as SmbClient;
 
-                            if (handle != null)
-                                handle.Dispose();
+                        if (handle != null)
+                            handle.Dispose();
 
-                            GC.KeepAlive(handle);
-                        }
+                        GC.KeepAlive(handle);
                     }
                 }
-            
+            }
+
         }
 
         ///////////////////////////////////////////////////////////////////////
@@ -236,50 +236,50 @@ namespace FileSystem.Smb.Internal
         /// </summary>
         internal static void ClearAllPools()
         {
-                lock (_syncRoot)
+            lock (_syncRoot)
+            {
+                foreach (KeyValuePair<string, PoolQueue> pair in _queueList)
                 {
-                    foreach (KeyValuePair<string, PoolQueue> pair in _queueList)
+                    if (pair.Value == null)
+                        continue;
+
+                    Queue<WeakReference> poolQueue = pair.Value.Queue;
+
+                    while (poolQueue.Count > 0)
                     {
-                        if (pair.Value == null)
-                            continue;
+                        WeakReference connection = poolQueue.Dequeue();
 
-                        Queue<WeakReference> poolQueue = pair.Value.Queue;
-
-                        while (poolQueue.Count > 0)
-                        {
-                            WeakReference connection = poolQueue.Dequeue();
-
-                            if (connection == null) continue;
+                        if (connection == null) continue;
 
                         SmbClient handle =
                                 connection.Target as SmbClient;
 
-                            if (handle != null)
-                                handle.Dispose();
+                        if (handle != null)
+                            handle.Dispose();
 
-                            GC.KeepAlive(handle);
-                        }
-
-                        //
-                        // NOTE: Keep track of the highest revision so we can
-                        //       go one higher when we are finished.
-                        //
-                        if (_poolVersion <= pair.Value.PoolVersion)
-                            _poolVersion = pair.Value.PoolVersion + 1;
+                        GC.KeepAlive(handle);
                     }
 
                     //
-                    // NOTE: All pools are cleared and we have a new highest
-                    //       version number to force all old version active
-                    //       items to get discarded instead of going back to
-                    //       the queue when they are closed.  We can get away
-                    //       with this because we have pumped up the pool
-                    //       version out of range of all active connections,
-                    //       so they will all get discarded when they try to
-                    //       put themselves back into their pools.
+                    // NOTE: Keep track of the highest revision so we can
+                    //       go one higher when we are finished.
                     //
-                    _queueList.Clear();
-                
+                    if (_poolVersion <= pair.Value.PoolVersion)
+                        _poolVersion = pair.Value.PoolVersion + 1;
+                }
+
+                //
+                // NOTE: All pools are cleared and we have a new highest
+                //       version number to force all old version active
+                //       items to get discarded instead of going back to
+                //       the queue when they are closed.  We can get away
+                //       with this because we have pumped up the pool
+                //       version out of range of all active connections,
+                //       so they will all get discarded when they try to
+                //       put themselves back into their pools.
+                //
+                _queueList.Clear();
+
             }
         }
 
@@ -307,35 +307,35 @@ namespace FileSystem.Smb.Internal
             int version
             )
         {
-            
-                lock (_syncRoot)
+
+            lock (_syncRoot)
+            {
+                //
+                // NOTE: If the queue does not exist in the pool, then it
+                //       must have been cleared sometime after the
+                //       connection was created.
+                //
+                PoolQueue queue;
+
+                if (_queueList.TryGetValue(fileName, out queue) &&
+                    version == queue.PoolVersion)
                 {
-                    //
-                    // NOTE: If the queue does not exist in the pool, then it
-                    //       must have been cleared sometime after the
-                    //       connection was created.
-                    //
-                    PoolQueue queue;
+                    ResizePool(queue, true);
 
-                    if (_queueList.TryGetValue(fileName, out queue) &&
-                        (version == queue.PoolVersion))
-                    {
-                        ResizePool(queue, true);
+                    Queue<WeakReference> poolQueue = queue.Queue;
+                    if (poolQueue == null) return;
 
-                        Queue<WeakReference> poolQueue = queue.Queue;
-                        if (poolQueue == null) return;
-
-                        poolQueue.Enqueue(new WeakReference(handle, false));
-                        Interlocked.Increment(ref _poolClosed);
-                    }
-                    else
-                    {
-                        handle.Close();
-                    }
-
-                    GC.KeepAlive(handle);
+                    poolQueue.Enqueue(new WeakReference(handle, false));
+                    Interlocked.Increment(ref _poolClosed);
                 }
-            
+                else
+                {
+                    handle.Close();
+                }
+
+                GC.KeepAlive(handle);
+            }
+
         }
 
         ///////////////////////////////////////////////////////////////////////
@@ -366,190 +366,190 @@ namespace FileSystem.Smb.Internal
             out int version
             )
         {
-                int localVersion;
-                Queue<WeakReference> poolQueue;
+            int localVersion;
+            Queue<WeakReference> poolQueue;
+
+            //
+            // NOTE: This lock cannot be held while checking the queue for
+            //       available connections because other methods of this
+            //       class are called from the GC finalizer thread and we
+            //       use the WaitForPendingFinalizers method (below).
+            //       Holding this lock while calling that method would
+            //       therefore result in a deadlock.  Instead, this lock
+            //       is held only while a temporary copy of the queue is
+            //       created, and if necessary, when committing changes
+            //       back to that original queue prior to returning from
+            //       this method.
+            //
+            lock (_syncRoot)
+            {
+                PoolQueue queue;
 
                 //
-                // NOTE: This lock cannot be held while checking the queue for
-                //       available connections because other methods of this
-                //       class are called from the GC finalizer thread and we
-                //       use the WaitForPendingFinalizers method (below).
-                //       Holding this lock while calling that method would
-                //       therefore result in a deadlock.  Instead, this lock
-                //       is held only while a temporary copy of the queue is
-                //       created, and if necessary, when committing changes
-                //       back to that original queue prior to returning from
-                //       this method.
+                // NOTE: Default to the highest pool version.
                 //
-                lock (_syncRoot)
+                version = _poolVersion;
+
+                //
+                // NOTE: If we didn't find a pool for this file, create one
+                //       even though it will be empty.  We have to do this
+                //       here because otherwise calling ClearPool() on the
+                //       file will not work for active connections that have
+                //       never seen the pool yet.
+                //
+                if (!_queueList.TryGetValue(fileName, out queue))
                 {
-                    PoolQueue queue;
+                    queue = new PoolQueue(_poolVersion, maxPoolSize);
+                    _queueList.Add(fileName, queue);
 
-                    //
-                    // NOTE: Default to the highest pool version.
-                    //
-                    version = _poolVersion;
-
-                    //
-                    // NOTE: If we didn't find a pool for this file, create one
-                    //       even though it will be empty.  We have to do this
-                    //       here because otherwise calling ClearPool() on the
-                    //       file will not work for active connections that have
-                    //       never seen the pool yet.
-                    //
-                    if (!_queueList.TryGetValue(fileName, out queue))
-                    {
-                        queue = new PoolQueue(_poolVersion, maxPoolSize);
-                        _queueList.Add(fileName, queue);
-
-                        return null;
-                    }
-
-                    //
-                    // NOTE: We found a pool for this file, so use its version
-                    //       number.
-                    //
-                    version = localVersion = queue.PoolVersion;
-                    queue.MaxPoolSize = maxPoolSize;
-
-                    //
-                    // NOTE: Now, resize the pool to the new maximum size, if
-                    //       necessary.
-                    //
-                    ResizePool(queue, false);
-
-                    //
-                    // NOTE: Try and get a pooled connection from the queue.
-                    //
-                    poolQueue = queue.Queue;
-                    if (poolQueue == null) return null;
-
-                    //
-                    // NOTE: Temporarily tranfer the queue for this file into
-                    //       a local variable.  The queue for this file will
-                    //       be modified and then committed back to the real
-                    //       pool list (below) prior to returning from this
-                    //       method.
-                    //
-                    _queueList.Remove(fileName);
-                    poolQueue = new Queue<WeakReference>(poolQueue);
+                    return null;
                 }
 
-                try
-                {
-                    while (poolQueue.Count > 0)
-                    {
-                        WeakReference connection = poolQueue.Dequeue();
+                //
+                // NOTE: We found a pool for this file, so use its version
+                //       number.
+                //
+                version = localVersion = queue.PoolVersion;
+                queue.MaxPoolSize = maxPoolSize;
 
-                        if (connection == null) continue;
+                //
+                // NOTE: Now, resize the pool to the new maximum size, if
+                //       necessary.
+                //
+                ResizePool(queue, false);
+
+                //
+                // NOTE: Try and get a pooled connection from the queue.
+                //
+                poolQueue = queue.Queue;
+                if (poolQueue == null) return null;
+
+                //
+                // NOTE: Temporarily tranfer the queue for this file into
+                //       a local variable.  The queue for this file will
+                //       be modified and then committed back to the real
+                //       pool list (below) prior to returning from this
+                //       method.
+                //
+                _queueList.Remove(fileName);
+                poolQueue = new Queue<WeakReference>(poolQueue);
+            }
+
+            try
+            {
+                while (poolQueue.Count > 0)
+                {
+                    WeakReference connection = poolQueue.Dequeue();
+
+                    if (connection == null) continue;
 
                     SmbClient handle =
                             connection.Target as SmbClient;
 
-                        if (handle == null) continue;
+                    if (handle == null) continue;
 
-                        //
-                        // BUGFIX: For ticket [996d13cd87], step #1.  After
-                        //         this point, make sure that the finalizer for
-                        //         the connection handle just obtained from the
-                        //         queue cannot START running (i.e. it may
-                        //         still be pending but it will no longer start
-                        //         after this point).
-                        //
-                        GC.SuppressFinalize(handle);
-
-                        try
-                        {
-                            //
-                            // BUGFIX: For ticket [996d13cd87], step #2.  Now,
-                            //         we must wait for all pending finalizers
-                            //         which have STARTED running and have not
-                            //         yet COMPLETED.  This must be done just
-                            //         in case the finalizer for the connection
-                            //         handle just obtained from the queue has
-                            //         STARTED running at some point before
-                            //         SuppressFinalize was called on it.
-                            //
-                            //         After this point, checking properties of
-                            //         the connection handle (e.g. IsClosed)
-                            //         should work reliably without having to
-                            //         worry that they will (due to the
-                            //         finalizer) change out from under us.
-                            //
-                            GC.WaitForPendingFinalizers();
-
-                            //
-                            // BUGFIX: For ticket [996d13cd87], step #3.  Next,
-                            //         verify that the connection handle is
-                            //         actually valid and [still?] not closed
-                            //         prior to actually returning it to our
-                            //         caller.
-                            //
-                            if (!handle.IsClosed)
-                            {
-                                Interlocked.Increment(ref _poolOpened);
-                                return handle;
-                            }
-                        }
-                        finally
-                        {
-                            //
-                            // BUGFIX: For ticket [996d13cd87], step #4.  Next,
-                            //         we must re-register the connection
-                            //         handle for finalization now that we have
-                            //         a strong reference to it (i.e. the
-                            //         finalizer will not run at least until
-                            //         the connection is subsequently closed).
-                            //
-                            GC.ReRegisterForFinalize(handle);
-                        }
-
-                        GC.KeepAlive(handle);
-                    }
-                }
-                finally
-                {
                     //
-                    // BUGFIX: For ticket [996d13cd87], step #5.  Finally,
-                    //         commit any changes to the pool/queue for this
-                    //         database file.
+                    // BUGFIX: For ticket [996d13cd87], step #1.  After
+                    //         this point, make sure that the finalizer for
+                    //         the connection handle just obtained from the
+                    //         queue cannot START running (i.e. it may
+                    //         still be pending but it will no longer start
+                    //         after this point).
                     //
-                    lock (_syncRoot)
+                    GC.SuppressFinalize(handle);
+
+                    try
                     {
                         //
-                        // NOTE: We must check [again] if a pool exists for
-                        //       this file because one may have been added
-                        //       while the search for an available connection
-                        //       was in progress (above).
+                        // BUGFIX: For ticket [996d13cd87], step #2.  Now,
+                        //         we must wait for all pending finalizers
+                        //         which have STARTED running and have not
+                        //         yet COMPLETED.  This must be done just
+                        //         in case the finalizer for the connection
+                        //         handle just obtained from the queue has
+                        //         STARTED running at some point before
+                        //         SuppressFinalize was called on it.
                         //
-                        PoolQueue queue;
-                        Queue<WeakReference> newPoolQueue;
-                        bool addPool;
+                        //         After this point, checking properties of
+                        //         the connection handle (e.g. IsClosed)
+                        //         should work reliably without having to
+                        //         worry that they will (due to the
+                        //         finalizer) change out from under us.
+                        //
+                        GC.WaitForPendingFinalizers();
 
-                        if (_queueList.TryGetValue(fileName, out queue))
+                        //
+                        // BUGFIX: For ticket [996d13cd87], step #3.  Next,
+                        //         verify that the connection handle is
+                        //         actually valid and [still?] not closed
+                        //         prior to actually returning it to our
+                        //         caller.
+                        //
+                        if (!handle.IsClosed)
                         {
-                            addPool = false;
+                            Interlocked.Increment(ref _poolOpened);
+                            return handle;
                         }
-                        else
-                        {
-                            addPool = true;
-                            queue = new PoolQueue(localVersion, maxPoolSize);
-                        }
-
-                        newPoolQueue = queue.Queue;
-
-                        while (poolQueue.Count > 0)
-                            newPoolQueue.Enqueue(poolQueue.Dequeue());
-
-                        ResizePool(queue, false);
-
-                        if (addPool)
-                            _queueList.Add(fileName, queue);
                     }
-                }
+                    finally
+                    {
+                        //
+                        // BUGFIX: For ticket [996d13cd87], step #4.  Next,
+                        //         we must re-register the connection
+                        //         handle for finalization now that we have
+                        //         a strong reference to it (i.e. the
+                        //         finalizer will not run at least until
+                        //         the connection is subsequently closed).
+                        //
+                        GC.ReRegisterForFinalize(handle);
+                    }
 
-                return null;
-            
+                    GC.KeepAlive(handle);
+                }
+            }
+            finally
+            {
+                //
+                // BUGFIX: For ticket [996d13cd87], step #5.  Finally,
+                //         commit any changes to the pool/queue for this
+                //         database file.
+                //
+                lock (_syncRoot)
+                {
+                    //
+                    // NOTE: We must check [again] if a pool exists for
+                    //       this file because one may have been added
+                    //       while the search for an available connection
+                    //       was in progress (above).
+                    //
+                    PoolQueue queue;
+                    Queue<WeakReference> newPoolQueue;
+                    bool addPool;
+
+                    if (_queueList.TryGetValue(fileName, out queue))
+                    {
+                        addPool = false;
+                    }
+                    else
+                    {
+                        addPool = true;
+                        queue = new PoolQueue(localVersion, maxPoolSize);
+                    }
+
+                    newPoolQueue = queue.Queue;
+
+                    while (poolQueue.Count > 0)
+                        newPoolQueue.Enqueue(poolQueue.Dequeue());
+
+                    ResizePool(queue, false);
+
+                    if (addPool)
+                        _queueList.Add(fileName, queue);
+                }
+            }
+
+            return null;
+
         }
         #endregion
 

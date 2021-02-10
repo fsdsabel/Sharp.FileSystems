@@ -1,6 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace FileSystem.Smb.Tests
+namespace Sharp.FileSystem.Smb.Tests
 {
     [TestClass]
     public class SmbFileSystemTests
@@ -8,10 +8,10 @@ namespace FileSystem.Smb.Tests
         [TestMethod]
         public void TestMethod1()
         {
-          //  var files = new CifsFileSystem().Directory.GetFiles("smb://corenode/shared/");
+            //  var files = new CifsFileSystem().Directory.GetFiles("smb://corenode/shared/");
         }
 
 
-        
+
     }
 }

@@ -1,11 +1,11 @@
-﻿using FileSystem.Smb.Internal;
+﻿using Sharp.FileSystem.Smb.Internal;
 using Sharp.FileSystems.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace FileSystem.Smb
+namespace Sharp.FileSystem.Smb
 {
     internal class SmbDirectory : IDirectory
     {
@@ -50,70 +50,70 @@ namespace FileSystem.Smb
             return FileSystem.DirectoryInfo.FromDirectoryName(path).EnumerateDirectories(searchPattern, searchOption).Select(p => p.FullName);
         }
 
-        public  IEnumerable<string> EnumerateFiles(string path)
+        public IEnumerable<string> EnumerateFiles(string path)
         {
             return EnumerateFiles(path, "*");
         }
 
-        public  IEnumerable<string> EnumerateFiles(string path, string searchPattern)
+        public IEnumerable<string> EnumerateFiles(string path, string searchPattern)
         {
             return EnumerateFiles(path, searchPattern, SearchOption.TopDirectoryOnly);
         }
 
-        public  IEnumerable<string> EnumerateFiles(string path, string searchPattern, SearchOption searchOption)
+        public IEnumerable<string> EnumerateFiles(string path, string searchPattern, SearchOption searchOption)
         {
             return FileSystem.DirectoryInfo.FromDirectoryName(path).EnumerateFiles(searchPattern, searchOption).Select(p => p.FullName);
-                     
+
         }
 
-        public  IEnumerable<string> EnumerateFileSystemEntries(string path)
+        public IEnumerable<string> EnumerateFileSystemEntries(string path)
         {
             return EnumerateFileSystemEntries(path, "*");
         }
 
-        public  IEnumerable<string> EnumerateFileSystemEntries(string path, string searchPattern)
+        public IEnumerable<string> EnumerateFileSystemEntries(string path, string searchPattern)
         {
             return EnumerateFileSystemEntries(path, searchPattern, SearchOption.TopDirectoryOnly);
         }
 
-        public  IEnumerable<string> EnumerateFileSystemEntries(string path, string searchPattern, SearchOption searchOption)
+        public IEnumerable<string> EnumerateFileSystemEntries(string path, string searchPattern, SearchOption searchOption)
         {
             return FileSystem.DirectoryInfo.FromDirectoryName(path).EnumerateFileSystemInfos(searchPattern, searchOption).Select(p => p.FullName);
         }
 
-        public  bool Exists(string path)
+        public bool Exists(string path)
         {
             var info = FileSystem.DirectoryInfo.FromDirectoryName(path);
             info.Refresh();
             return info.Exists;
         }
 
-        public  DateTime GetCreationTime(string path)
+        public DateTime GetCreationTime(string path)
         {
             return FileSystem.DirectoryInfo.FromDirectoryName(path).CreationTime;
         }
 
-        public  DateTime GetCreationTimeUtc(string path)
+        public DateTime GetCreationTimeUtc(string path)
         {
             return FileSystem.DirectoryInfo.FromDirectoryName(path).CreationTimeUtc;
         }
 
-        public  string GetCurrentDirectory()
+        public string GetCurrentDirectory()
         {
             throw new NotSupportedException();
         }
-        
-        public  string[] GetDirectories(string path)
+
+        public string[] GetDirectories(string path)
         {
             return GetDirectories(path, "*", SearchOption.TopDirectoryOnly);
         }
 
-        public  string[] GetDirectories(string path, string searchPattern)
+        public string[] GetDirectories(string path, string searchPattern)
         {
             return GetDirectories(path, searchPattern, SearchOption.TopDirectoryOnly);
         }
 
-        public  string[] GetDirectories(string path, string searchPattern, SearchOption searchOption)
+        public string[] GetDirectories(string path, string searchPattern, SearchOption searchOption)
         {
             return EnumerateDirectories(path, searchPattern, searchOption).ToArray();
         }
@@ -123,52 +123,52 @@ namespace FileSystem.Smb
             return FileSystem.DirectoryInfo.FromDirectoryName(path).Root.FullName;
         }
 
-        public  string[] GetFiles(string path)
+        public string[] GetFiles(string path)
         {
             return EnumerateFiles(path).ToArray();
         }
 
-        public  string[] GetFiles(string path, string searchPattern)
+        public string[] GetFiles(string path, string searchPattern)
         {
             return EnumerateFiles(path, searchPattern).ToArray();
         }
 
-        public  string[] GetFiles(string path, string searchPattern, SearchOption searchOption)
+        public string[] GetFiles(string path, string searchPattern, SearchOption searchOption)
         {
             return EnumerateFiles(path, searchPattern, searchOption).ToArray();
         }
 
-        public  string[] GetFileSystemEntries(string path)
+        public string[] GetFileSystemEntries(string path)
         {
             return GetFileSystemEntries(path, "*");
         }
 
-        public  string[] GetFileSystemEntries(string path, string searchPattern)
+        public string[] GetFileSystemEntries(string path, string searchPattern)
         {
             return EnumerateFileSystemEntries(path, searchPattern, SearchOption.TopDirectoryOnly).ToArray();
         }
 
-        public  DateTime GetLastAccessTime(string path)
+        public DateTime GetLastAccessTime(string path)
         {
             return FileSystem.DirectoryInfo.FromDirectoryName(path).LastAccessTime;
         }
 
-        public  DateTime GetLastAccessTimeUtc(string path)
+        public DateTime GetLastAccessTimeUtc(string path)
         {
             return FileSystem.DirectoryInfo.FromDirectoryName(path).LastAccessTimeUtc;
         }
 
-        public  DateTime GetLastWriteTime(string path)
+        public DateTime GetLastWriteTime(string path)
         {
             return FileSystem.DirectoryInfo.FromDirectoryName(path).LastWriteTime;
         }
 
-        public  DateTime GetLastWriteTimeUtc(string path)
+        public DateTime GetLastWriteTimeUtc(string path)
         {
             return FileSystem.DirectoryInfo.FromDirectoryName(path).LastWriteTimeUtc;
         }
 
-        public  string[] GetLogicalDrives(string path)
+        public string[] GetLogicalDrives(string path)
         {
             using (var client = SmbClient.GetSmbClient(path))
             {
@@ -181,47 +181,47 @@ namespace FileSystem.Smb
             }
         }
 
-        public  IDirectoryInfo GetParent(string path)
+        public IDirectoryInfo GetParent(string path)
         {
             return FileSystem.DirectoryInfo.FromDirectoryName(path).Parent;
         }
 
-        public  void Move(string sourceDirName, string destDirName)
+        public void Move(string sourceDirName, string destDirName)
         {
             FileSystem.DirectoryInfo.FromDirectoryName(sourceDirName).MoveTo(destDirName);
         }
 
-        public  void SetCreationTime(string path, DateTime creationTime)
+        public void SetCreationTime(string path, DateTime creationTime)
         {
             FileSystem.DirectoryInfo.FromDirectoryName(path).CreationTime = creationTime;
         }
 
-        public  void SetCreationTimeUtc(string path, DateTime creationTimeUtc)
+        public void SetCreationTimeUtc(string path, DateTime creationTimeUtc)
         {
             FileSystem.DirectoryInfo.FromDirectoryName(path).CreationTimeUtc = creationTimeUtc;
         }
 
-        public  void SetCurrentDirectory(string path)
+        public void SetCurrentDirectory(string path)
         {
             throw new NotSupportedException();
         }
 
-        public  void SetLastAccessTime(string path, DateTime lastAccessTime)
+        public void SetLastAccessTime(string path, DateTime lastAccessTime)
         {
             FileSystem.DirectoryInfo.FromDirectoryName(path).LastAccessTime = lastAccessTime;
         }
 
-        public  void SetLastAccessTimeUtc(string path, DateTime lastAccessTimeUtc)
+        public void SetLastAccessTimeUtc(string path, DateTime lastAccessTimeUtc)
         {
             FileSystem.DirectoryInfo.FromDirectoryName(path).LastAccessTimeUtc = lastAccessTimeUtc;
         }
 
-        public  void SetLastWriteTime(string path, DateTime lastWriteTime)
+        public void SetLastWriteTime(string path, DateTime lastWriteTime)
         {
             FileSystem.DirectoryInfo.FromDirectoryName(path).LastWriteTime = lastWriteTime;
         }
 
-        public  void SetLastWriteTimeUtc(string path, DateTime lastWriteTimeUtc)
+        public void SetLastWriteTimeUtc(string path, DateTime lastWriteTimeUtc)
         {
             FileSystem.DirectoryInfo.FromDirectoryName(path).LastWriteTimeUtc = lastWriteTimeUtc;
         }

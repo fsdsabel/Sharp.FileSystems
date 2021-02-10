@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace FileSystem.Smb.Tests
+namespace Sharp.FileSystem.Smb.Tests
 {
     [TestClass]
     public class SmbDirectoryTests
@@ -219,7 +219,7 @@ namespace FileSystem.Smb.Tests
             var parent = fs.DirectoryInfo.FromDirectoryName(dirname).Parent;
             parent.Should().NotBeNull();
             parent.FullName.Should().Be($"{TestFolder}/testparent");
-           
+
             parent = fs.DirectoryInfo.FromDirectoryName(TestHelpers.ShareUri(TestFolder, ShareType.Anonymous)).Parent;
             parent.Should().NotBeNull();
             parent.FullName.Should().Be("/");

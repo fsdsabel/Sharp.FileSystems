@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <UserSecretsId>05fc8c5c-e50a-4c1e-a633-a9bc816745be</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Zeroconf" Version="3.4.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FileSystem.Smb\Sharp.FileSystem.Smb.csproj" />
+    <ProjectReference Include="..\Sharp.FileSystems.Abstractions\Sharp.FileSystems.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

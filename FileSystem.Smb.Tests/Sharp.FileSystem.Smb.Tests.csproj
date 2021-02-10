@@ -15,7 +15,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FileSystem.Smb\FileSystem.Smb.csproj" />
+    <ProjectReference Include="..\FileSystem.Smb\Sharp.FileSystem.Smb.csproj" />
+    <ProjectReference Include="..\Sharp.Filesystem.Smb.Discovery\Sharp.FileSystem.Smb.Discovery.csproj" />
   </ItemGroup>
 
 </Project>

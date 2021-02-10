@@ -5,7 +5,7 @@ using System.Globalization;
 using System.Reflection;
 using System.Text;
 
-namespace FileSystem.Smb.Tests
+namespace Sharp.FileSystem.Smb.Tests
 {
     public enum ShareType
     {
@@ -18,7 +18,7 @@ namespace FileSystem.Smb.Tests
         public const string TestHost = "corenode";
 
         public const string AnonymousShare = "shared";
-        
+
         public const string AuthenticatedShare = "auth_shared";
 
         public const string Username = "";
@@ -33,7 +33,7 @@ namespace FileSystem.Smb.Tests
             return $"smb://{Username}:{Password}@{TestHost}/{AuthenticatedShare}/{path}";
         }
 
-        
+
     }
 
     public class TestShareAttribute : Attribute, ITestDataSource
