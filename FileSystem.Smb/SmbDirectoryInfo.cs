@@ -11,20 +11,22 @@ namespace Sharp.FileSystem.Smb
     {
         private readonly string _directoryName;
         private readonly Uri _uri;
+        private readonly string _smbPath;
         private DateTime _creationTime;
         private DateTime _creationTimeUtc;
         private FileAttributes _attributes;
         private DateTime _lastAccessTime;
         private DateTime _lastAccessTimeUtc;
         private DateTime _lastWriteTime;
-        private DateTime _lastWriteTimeUtc;
+        private DateTime _lastWriteTimeUtc;        
 
         public SmbDirectoryInfo(IFileSystem fileSystem, string directoryName)
         {
             FileSystem = fileSystem;
             _directoryName = directoryName;
             _uri = new Uri(directoryName);
-            FullName = Uri.UnescapeDataString(string.Join("", _uri.Segments.Skip(2)));
+            FullName = Uri.UnescapeDataString(_uri.AbsolutePath);
+            _smbPath = Uri.UnescapeDataString(string.Join("", _uri.Segments.Skip(2)));
             if (string.IsNullOrEmpty(FullName))
             {
                 FullName = "/";
@@ -47,7 +49,7 @@ namespace Sharp.FileSystem.Smb
         {
             get
             {
-                var parts = FullName.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+                var parts = _smbPath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries).ToList();
                 if (parts.Count < 1) return null;
                 parts.RemoveAt(parts.Count - 1);
                 return FileSystem.DirectoryInfo.FromDirectoryName(ChangePathOfCurrentUri(string.Join("/", parts)));
@@ -57,7 +59,7 @@ namespace Sharp.FileSystem.Smb
         {
             get
             {
-                return FileSystem.DirectoryInfo.FromDirectoryName(ChangePathOfCurrentUri("") + "/");
+                return FileSystem.DirectoryInfo.FromDirectoryName(ChangePathOfCurrentUri(""));
             }
         }
         public IFileSystem FileSystem { get; }
@@ -70,7 +72,7 @@ namespace Sharp.FileSystem.Smb
                 {
                     var fi = new SMBLibrary.FileBasicInformation();
                     fi.FileAttributes = SmbHelper.MapFileAttributes(value);
-                    client.SetFileInformation(FullName, true, fi);
+                    client.SetFileInformation(_smbPath, true, fi);
                 }
                 _attributes = value;
             }
@@ -82,7 +84,7 @@ namespace Sharp.FileSystem.Smb
             {
                 var fi = new SMBLibrary.FileBasicInformation();
                 setter(fi);
-                client.SetFileInformation(FullName, true, fi);
+                client.SetFileInformation(_smbPath, true, fi);
             }
             field = value;
         }
@@ -123,19 +125,19 @@ namespace Sharp.FileSystem.Smb
         }
         public string Name => Path.GetFileName(FullName);
 
-        private SmbDirectoryInfo CreateChildDirectoryInfo(string absolutePath)
+        private SmbDirectoryInfo CreateChildDirectoryInfo(string smbPath)
         {
             var builder = new UriBuilder(_uri);
             // keep share (first part)
-            builder.Path = Path.Combine(string.Join("", _uri.Segments.Take(2)), absolutePath);
+            builder.Path = Path.Combine(string.Join("", _uri.Segments.Take(2)), smbPath);
             return new SmbDirectoryInfo(FileSystem, builder.Uri.ToString());
         }
 
-        private SmbFileInfo CreateChildFileInfo(string absolutePath)
+        private SmbFileInfo CreateChildFileInfo(string smbPath)
         {
             var builder = new UriBuilder(_uri);
             // keep share (first part)            
-            builder.Path = Path.Combine(string.Join("", _uri.Segments.Take(2)), absolutePath);
+            builder.Path = Path.Combine(string.Join("", _uri.Segments.Take(2)), smbPath);
             return new SmbFileInfo(FileSystem, builder.Uri.ToString());
         }
 
@@ -143,7 +145,7 @@ namespace Sharp.FileSystem.Smb
         {
             using (var client = SmbClient.GetSmbClient(_directoryName))
             {
-                client.CreateDirectory(FullName);
+                client.CreateDirectory(_smbPath);
                 Refresh(client);
             }
         }
@@ -152,7 +154,7 @@ namespace Sharp.FileSystem.Smb
         {
             using (var client = SmbClient.GetSmbClient(_directoryName))
             {
-                var fullpath = Path.Combine(FullName, path);
+                var fullpath = Path.Combine(_smbPath, path);
                 client.CreateDirectory(fullpath);
                 return FileSystem.DirectoryInfo.FromDirectoryName(ChangePathOfCurrentUri(fullpath));
             }
@@ -164,7 +166,7 @@ namespace Sharp.FileSystem.Smb
             {
                 try
                 {
-                    client.DeleteFile(FullName, true, recursive);
+                    client.DeleteFile(_smbPath, true, recursive);
                 }
                 catch (SmbIOException ex) when (ex.Status == SMBLibrary.NTStatus.STATUS_OBJECT_NAME_NOT_FOUND) { }
             }
@@ -189,7 +191,7 @@ namespace Sharp.FileSystem.Smb
         {
             using (var client = SmbClient.GetSmbClient(_directoryName))
             {
-                return client.EnumerateFileEntries(FullName, searchPattern, searchOption)
+                return client.EnumerateFileEntries(_smbPath, searchPattern, searchOption)
                     .Select(f => CreateChildDirectoryInfo(f.FileName));
             }
         }
@@ -208,7 +210,7 @@ namespace Sharp.FileSystem.Smb
         {
             using (var client = SmbClient.GetSmbClient(_directoryName))
             {
-                return client.EnumerateFileEntries(FullName, searchPattern, searchOption)
+                return client.EnumerateFileEntries(_smbPath, searchPattern, searchOption)
                     .Where(f => !f.FileAttributes.HasFlag(SMBLibrary.FileAttributes.Directory))
                     .Select(f => CreateChildFileInfo(f.FileName));
             }
@@ -228,7 +230,7 @@ namespace Sharp.FileSystem.Smb
         {
             using (var client = SmbClient.GetSmbClient(_directoryName))
             {
-                return client.EnumerateFileEntries(FullName, searchPattern, searchOption)
+                return client.EnumerateFileEntries(_smbPath, searchPattern, searchOption)
                     .Select(f =>
                     {
                         if (f.FileAttributes.HasFlag(SMBLibrary.FileAttributes.Directory))
@@ -289,12 +291,12 @@ namespace Sharp.FileSystem.Smb
         {
             using (var client = SmbClient.GetSmbClient(_directoryName))
             {
-                var handle = client.OpenFile(FullName, true, FileMode.Open, FileAccess.ReadWrite);
+                var handle = client.OpenFile(_smbPath, true, FileMode.Open, FileAccess.ReadWrite);
                 try
                 {
                     var destInfo = new SmbDirectoryInfo(FileSystem, destDirName);
 
-                    var fdi = new SMBLibrary.FileRenameInformationType2 { FileName = destInfo.FullName };
+                    var fdi = new SMBLibrary.FileRenameInformationType2 { FileName = destInfo._smbPath };
 
                     client.ThrowOnError(client.FileStore.SetFileInformation(handle, fdi));
                 }
@@ -317,7 +319,7 @@ namespace Sharp.FileSystem.Smb
         {
             try
             {
-                var info = client.GetFileInformation(FullName, true);
+                var info = client.GetFileInformation(_smbPath, true);
                 Exists = true;
                 _lastAccessTime = info.BasicInformation.LastAccessTime.Time.GetValueOrDefault().ToLocalTime();
                 _lastAccessTimeUtc = info.BasicInformation.LastAccessTime.Time.GetValueOrDefault();

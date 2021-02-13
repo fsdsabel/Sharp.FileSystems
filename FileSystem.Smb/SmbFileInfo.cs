@@ -2,6 +2,7 @@
 using Sharp.FileSystems.Abstractions;
 using System;
 using System.IO;
+using System.Linq;
 
 namespace Sharp.FileSystem.Smb
 {
@@ -10,6 +11,7 @@ namespace Sharp.FileSystem.Smb
     {
         private readonly string _fileName;
         private readonly Uri _uri;
+        private readonly string _smbPath;
         private FileAttributes _attributes;
         private DateTime _creationTime;
         private DateTime _creationTimeUtc;
@@ -23,7 +25,8 @@ namespace Sharp.FileSystem.Smb
             FileSystem = fileSystem;
             _fileName = fileName;
             _uri = new Uri(fileName);
-            FullName = Uri.UnescapeDataString(_uri.AbsolutePath.Substring(_uri.AbsolutePath.Substring(1).IndexOf('/') + 2));
+            _smbPath = Uri.UnescapeDataString(string.Join("", _uri.Segments.Skip(2)));
+            FullName =  Uri.UnescapeDataString(_uri.AbsolutePath);
         }
 
         public IDirectoryInfo Directory { get; }
@@ -40,7 +43,7 @@ namespace Sharp.FileSystem.Smb
                 {
                     var fi = new SMBLibrary.FileBasicInformation();
                     fi.FileAttributes = SmbHelper.MapFileAttributes(value);
-                    client.SetFileInformation(FullName, false, fi);
+                    client.SetFileInformation(_smbPath, false, fi);
                 }
                 _attributes = value;
             }
@@ -52,7 +55,7 @@ namespace Sharp.FileSystem.Smb
             {
                 var fi = new SMBLibrary.FileBasicInformation();
                 setter(fi);
-                client.SetFileInformation(FullName, false, fi);
+                client.SetFileInformation(_smbPath, false, fi);
             }
             field = value;
         }
@@ -123,7 +126,7 @@ namespace Sharp.FileSystem.Smb
         public Stream Create()
         {
             var client = SmbClient.GetSmbClient(_fileName);
-            return new SmbStream(client, client.OpenFile(FullName, false, FileMode.Create, FileAccess.ReadWrite), FileAccess.ReadWrite);
+            return new SmbStream(client, client.OpenFile(_smbPath, false, FileMode.Create, FileAccess.ReadWrite), FileAccess.ReadWrite);
         }
 
         public StreamWriter CreateText()
@@ -142,7 +145,7 @@ namespace Sharp.FileSystem.Smb
             {
                 try
                 {
-                    client.DeleteFile(FullName, false, false);
+                    client.DeleteFile(_smbPath, false, false);
                 }
                 catch (SmbIOException ex) when (ex.Status == SMBLibrary.NTStatus.STATUS_OBJECT_NAME_NOT_FOUND) { }
             }
@@ -157,14 +160,14 @@ namespace Sharp.FileSystem.Smb
         {
             using (var client = SmbClient.GetSmbClient(_fileName))
             {
-                var handle = client.OpenFile(FullName, false, FileMode.Open, FileAccess.ReadWrite);
+                var handle = client.OpenFile(_smbPath, false, FileMode.Open, FileAccess.ReadWrite);
                 try
                 {
                     var destInfo = new SmbFileInfo(FileSystem, destFileName);
 
                     var fdi = new SMBLibrary.FileRenameInformationType2
                     {
-                        FileName = destInfo.FullName,
+                        FileName = destInfo._smbPath,
                         ReplaceIfExists = true
                     };
 
@@ -190,7 +193,7 @@ namespace Sharp.FileSystem.Smb
         public Stream Open(FileMode mode, FileAccess access, FileShare share)
         {
             var client = SmbClient.GetSmbClient(_fileName);
-            return new BufferedStream(new SmbStream(client, client.OpenFile(FullName, false, mode, access, share), access));
+            return new BufferedStream(new SmbStream(client, client.OpenFile(_smbPath, false, mode, access, share), access));
         }
 
         public Stream OpenRead()
@@ -220,7 +223,7 @@ namespace Sharp.FileSystem.Smb
         {
             var result = client.FileStore.CreateFile(out var handle,
                            out var status,
-                           FullName,
+                           _smbPath,
                            SMBLibrary.AccessMask.GENERIC_READ,
                            SMBLibrary.FileAttributes.Normal,
                            SMBLibrary.ShareAccess.Read | SMBLibrary.ShareAccess.Write,
@@ -231,7 +234,7 @@ namespace Sharp.FileSystem.Smb
             {
                 client.CloseFile(handle);
 
-                var info = client.GetFileInformation(FullName, false);
+                var info = client.GetFileInformation(_smbPath, false);
                 _lastAccessTime = info.BasicInformation.LastAccessTime.Time.GetValueOrDefault().ToLocalTime();
                 _lastAccessTimeUtc = info.BasicInformation.LastAccessTime.Time.GetValueOrDefault();
                 _lastWriteTime = info.BasicInformation.LastWriteTime.Time.GetValueOrDefault().ToLocalTime();

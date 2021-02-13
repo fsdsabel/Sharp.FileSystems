@@ -11,12 +11,13 @@ namespace Sharp.FileSystem.Smb
             _fileSystem = fileSystem;
         }
 
-        public IDirectoryInfo FromDirectoryName(string directoryName)
+        public IDirectoryInfo FromDirectoryName(string directoryName, bool refresh)
         {
             var info = new SmbDirectoryInfo(_fileSystem, directoryName);
-
-            info.Refresh();
-
+            if (refresh)
+            {
+                info.Refresh();
+            }
             return info;
         }
     }

@@ -33,6 +33,14 @@ namespace Sharp.FileSystem.Smb.Tests
             return $"smb://{Username}:{Password}@{TestHost}/{AuthenticatedShare}/{path}";
         }
 
+        public static string SmbPath(string path, ShareType type)
+        {
+            if (type == ShareType.Anonymous)
+            {
+                return $"/{AnonymousShare}/{path}";
+            }
+            return $"/{AuthenticatedShare}/{path}";
+        }
 
     }
 

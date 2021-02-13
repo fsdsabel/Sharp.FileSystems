@@ -275,6 +275,11 @@ namespace Sharp.FileSystem.Smb.Internal
         {
             if (status != NTStatus.STATUS_SUCCESS && status != NTStatus.STATUS_PENDING)
             {
+                switch(status)
+                {
+                    case NTStatus.STATUS_ACCESS_DENIED:
+                        throw new SmbIOException($"Access denied.", status);                    
+                }
                 throw new SmbIOException($"Error using SMB, error code {status}", status);
             }
         }

@@ -29,7 +29,7 @@ namespace Sharp.FileSystem.Smb.Tests
         {
             var info = new SmbFileSystem().Directory.CreateDirectory(TestHelpers.ShareUri($"{TestFolder}/Cifs.Fs", shareType));
             info.Exists.Should().BeTrue();
-            info.FullName.Should().Be($"{TestFolder}/Cifs.Fs");
+            info.FullName.Should().Be(TestHelpers.SmbPath($"{TestFolder}/Cifs.Fs", shareType));
             info.Name.Should().Be("Cifs.Fs");
             info.Extension.Should().Be(".Fs");
             info.LastAccessTime.Should().BeCloseTo(DateTime.Now, 1000);
@@ -58,7 +58,7 @@ namespace Sharp.FileSystem.Smb.Tests
             }
 
             var found = fs.Directory.EnumerateDirectories(TestHelpers.ShareUri(TestFolder, shareType));
-            found.Should().BeEquivalentTo(dirList);
+            found.Should().BeEquivalentTo(dirList.Select(d => TestHelpers.SmbPath(d, shareType)));
         }
 
         [DataTestMethod]
@@ -79,7 +79,7 @@ namespace Sharp.FileSystem.Smb.Tests
             }
 
             var found = fs.Directory.EnumerateDirectories(TestHelpers.ShareUri(TestFolder, shareType), "*.2").ToArray();
-            found.Should().OnlyContain(f => f == dirList[1]);
+            found.Should().OnlyContain(f => f == TestHelpers.SmbPath(dirList[1], shareType));
         }
 
         [DataTestMethod]
@@ -101,8 +101,8 @@ namespace Sharp.FileSystem.Smb.Tests
 
             var found = fs.Directory.EnumerateDirectories(TestHelpers.ShareUri(TestFolder, shareType), "*.2", SearchOption.AllDirectories).ToArray();
             found.Should().HaveCount(2);
-            found.Should().Contain(dirList[1]);
-            found.Should().Contain(dirList[2]);
+            found.Should().Contain(TestHelpers.SmbPath(dirList[1], shareType));
+            found.Should().Contain(TestHelpers.SmbPath(dirList[2], shareType));
         }
 
         [DataTestMethod]
@@ -135,8 +135,8 @@ namespace Sharp.FileSystem.Smb.Tests
 
             var found = fs.Directory.EnumerateFiles(TestHelpers.ShareUri(TestFolder, shareType), "*.txt", SearchOption.AllDirectories).ToArray();
             found.Should().HaveCount(2);
-            found.Should().Contain(fileList[0]);
-            found.Should().Contain(fileList[2]);
+            found.Should().Contain(TestHelpers.SmbPath(fileList[0], shareType));
+            found.Should().Contain(TestHelpers.SmbPath(fileList[2], shareType));
         }
 
         [DataTestMethod]
@@ -208,7 +208,7 @@ namespace Sharp.FileSystem.Smb.Tests
         public void Can_get_directory_root()
         {
             var dirname = TestHelpers.ShareUri($"{TestFolder}/somedir/usdfhu", ShareType.Anonymous);
-            new SmbFileSystem().Directory.GetDirectoryRoot(dirname).Should().Be($"/");
+            new SmbFileSystem().Directory.GetDirectoryRoot(dirname).Should().Be($"/{TestHelpers.AnonymousShare}");
         }
 
         [TestMethod]
@@ -218,13 +218,13 @@ namespace Sharp.FileSystem.Smb.Tests
             var fs = new SmbFileSystem();
             var parent = fs.DirectoryInfo.FromDirectoryName(dirname).Parent;
             parent.Should().NotBeNull();
-            parent.FullName.Should().Be($"{TestFolder}/testparent");
+            parent.FullName.Should().Be($"/{TestHelpers.AnonymousShare}/{TestFolder}/testparent");
 
             parent = fs.DirectoryInfo.FromDirectoryName(TestHelpers.ShareUri(TestFolder, ShareType.Anonymous)).Parent;
             parent.Should().NotBeNull();
-            parent.FullName.Should().Be("/");
+            parent.FullName.Should().Be($"/{TestHelpers.AnonymousShare}");
 
-            parent = fs.DirectoryInfo.FromDirectoryName(TestHelpers.ShareUri("/", ShareType.Anonymous)).Parent;
+            parent = fs.DirectoryInfo.FromDirectoryName(TestHelpers.ShareUri($"", ShareType.Anonymous)).Parent;
             parent.Should().BeNull("no more parent folders");
         }
 

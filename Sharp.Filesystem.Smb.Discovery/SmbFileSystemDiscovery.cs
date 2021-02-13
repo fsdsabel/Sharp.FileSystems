@@ -90,19 +90,4 @@ namespace Sharp.FileSystem.Smb.Discovery
         }
 
     }
-
-    class SmbFileSystemDiscoveryResult : IFileSystemDiscoveryResult
-    {
-        public SmbFileSystemDiscoveryResult(IFileSystem fileSystem, string rootPath, string displayName)
-        {
-            FileSystem = fileSystem;
-            RootPath = rootPath;
-            DisplayName = displayName;
-        }
-
-        public string DisplayName { get; }
-        public IFileSystem FileSystem { get;  }
-
-        public string RootPath { get; }
-    }
 }

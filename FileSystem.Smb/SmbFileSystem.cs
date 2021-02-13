@@ -10,6 +10,7 @@ namespace Sharp.FileSystem.Smb
             File = new SmbFile(this);
             DirectoryInfo = new SmbDirectoryInfoFactory(this);
             FileInfo = new SmbFileInfoFactory(this);
+            Path = new SmbPath(this);
         }
 
         public IFile File { get; }
