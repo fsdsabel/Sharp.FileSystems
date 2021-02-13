@@ -1,0 +1,85 @@
+﻿<ResourceDictionary xmlns="http://xamarin.com/schemas/2014/forms"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
+                    xmlns:filesystem="clr-namespace:Sharp.FileSystem.Forms"
+                    x:Class="Sharp.FileSystem.Forms.Themes.BasicTheme">
+
+    <!-- Light colors -->
+    <Color x:Key="LightPrimaryColor">WhiteSmoke</Color>
+    <Color x:Key="LightSecondaryColor">Black</Color>
+
+    <!-- Dark colors -->
+    <Color x:Key="DarkPrimaryColor">Black</Color>
+    <Color x:Key="DarkSecondaryColor">White</Color>
+
+    <DataTemplate x:Key="FileTemplate">
+        <StackLayout Orientation="Horizontal" Margin="0,2" MinimumHeightRequest="44">
+            <Image WidthRequest="50" HorizontalOptions="Center" VerticalOptions="Center"  Margin="2">
+                <Image.Source>
+                    <FontImageSource FontFamily="{Binding IconFont}"
+                                         Glyph="{Binding Icon}"
+                                         Size="44"
+                                         Color="{x:Static Color.Accent}"/>
+                </Image.Source>
+            </Image>
+            <Label Text="{Binding Name}"  
+                   TextColor="{Binding TextColor, Source={RelativeSource AncestorType={x:Type filesystem:FileBrowserView}}}"
+                   VerticalTextAlignment="Center">
+
+            </Label>
+        </StackLayout>
+
+    </DataTemplate>
+    <DataTemplate x:Key="DirectoryTemplate">
+        <StackLayout Orientation="Horizontal" Margin="0,2" MinimumHeightRequest="44">
+            <Image WidthRequest="50" HorizontalOptions="Center" VerticalOptions="Center" Margin="2">
+                <Image.Source>
+                    <FontImageSource FontFamily="{Binding IconFont}"
+                                         Glyph="{Binding Icon}"
+                                         Size="44"
+                                         Color="{x:Static Color.Accent}"/>
+                </Image.Source>
+            </Image>
+            <Label Text="{Binding Name}" 
+                   TextColor="{Binding TextColor, Source={RelativeSource AncestorType={x:Type filesystem:FileBrowserView}}}"
+                   VerticalTextAlignment="Center"/>
+
+        </StackLayout>
+
+    </DataTemplate>
+    <filesystem:FileSystemItemTemplateSelector x:Key="FileSystemItemTemplateSelector"
+                                                   FileTemplate="{StaticResource FileTemplate}"
+                                                   DirectoryTemplate="{StaticResource DirectoryTemplate}" 
+                                                   />
+
+
+    <Style TargetType="{x:Type filesystem:FileBrowserView}">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource LightPrimaryColor}, Dark={StaticResource DarkPrimaryColor}}" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource LightSecondaryColor}, Dark={StaticResource DarkSecondaryColor}}" />
+        <Setter Property="ControlTemplate">
+            <Setter.Value>
+                <ControlTemplate>
+                    <RefreshView x:Name="RefreshView">
+                        <Grid>
+                            <CollectionView x:Name="Files" 
+                                            ItemTemplate="{StaticResource FileSystemItemTemplateSelector}"
+                                            BackgroundColor="{TemplateBinding BackgroundColor}"                                            
+                                            SelectedItem="{Binding SelectedItem, Source={RelativeSource AncestorType={x:Type filesystem:FileBrowserView}}}"
+                                            SelectionMode="Single"
+                                            ItemsSource="{Binding Adapter.Items, Source={RelativeSource AncestorType={x:Type filesystem:FileBrowserView}}}" />
+
+                            <StackLayout IsVisible="{Binding IsBusy, Source={RelativeSource AncestorType={x:Type filesystem:FileBrowserView}}}"
+                             AbsoluteLayout.LayoutBounds="0,0,1,1"
+                             AbsoluteLayout.LayoutFlags="All"
+                             BackgroundColor="Gray" Opacity="0.5">
+                                <ActivityIndicator IsRunning="{Binding IsBusy, Source={RelativeSource AncestorType={x:Type filesystem:FileBrowserView}}}"
+                                       HorizontalOptions="CenterAndExpand"
+                                       VerticalOptions="CenterAndExpand"/>
+                            </StackLayout>
+                        </Grid>
+                    </RefreshView>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

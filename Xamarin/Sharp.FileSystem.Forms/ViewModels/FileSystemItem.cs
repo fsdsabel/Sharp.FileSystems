@@ -1,6 +1,6 @@
 ﻿using Sharp.FileSystems.Abstractions;
 
-namespace FileBrowser.FileSystem
+namespace Sharp.FileSystem.Forms.ViewModels
 {
     public abstract class FileSystemItem
     {
@@ -15,6 +15,6 @@ namespace FileBrowser.FileSystem
 
         public virtual string Icon { get; }
 
-        public virtual string IconFont => "FAR";
+        public virtual string IconFont => "FAS";
     }
 }

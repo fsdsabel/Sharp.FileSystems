@@ -7,6 +7,7 @@ namespace FileBrowser
         public MainPage()
         {
             InitializeComponent();
+            //new SharpFileSystemResourceDictionary()
         }
     }
 }

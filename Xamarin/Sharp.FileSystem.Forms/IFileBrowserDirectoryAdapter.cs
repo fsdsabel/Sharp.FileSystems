@@ -1,10 +1,10 @@
-﻿using Sharp.FileSystems.Abstractions;
+﻿using Sharp.FileSystem.Forms.ViewModels;
+using Sharp.FileSystems.Abstractions;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 
-namespace FileBrowser.FileSystem
+namespace Sharp.FileSystem.Forms
 {
     public interface IFileBrowserDirectoryAdapter
     {

@@ -1,7 +1,7 @@
-﻿using FileBrowser.Fonts;
+﻿using Sharp.FileSystem.Forms.Fonts;
 using Sharp.FileSystems.Abstractions;
 
-namespace FileBrowser.FileSystem
+namespace Sharp.FileSystem.Forms.ViewModels
 {
     class FileItem : FileSystemItem
     {
@@ -16,42 +16,42 @@ namespace FileBrowser.FileSystem
         {
             get
             {
-                switch(FileInfo.Extension.ToLower())
+                switch (FileInfo.Extension.ToLower())
                 {
                     case ".jpg":
                     case ".bmp":
                     case ".gif":
                     case ".png":
                     case ".tiff":
-                        return IconFontRegular.FileImage;
+                        return IconFontSolid.FileImage;
                     case ".pdf":
-                        return IconFontRegular.FilePdf;
+                        return IconFontSolid.FilePdf;
                     case ".ppt":
                     case ".pptx":
-                        return IconFontRegular.FilePowerpoint;
+                        return IconFontSolid.FilePowerpoint;
                     case ".xls":
                     case ".xlsx":
-                        return IconFontRegular.FileExcel;
+                        return IconFontSolid.FileExcel;
                     case ".doc":
                     case ".docx":
-                        return IconFontRegular.FileWord;
+                        return IconFontSolid.FileWord;
                     case ".mp3":
                     case ".aac":
-                        return IconFontRegular.FileAudio;
+                        return IconFontSolid.FileAudio;
                     case ".zip":
                     case ".rar":
                     case ".7z":
                     case ".gz":
                     case ".bz2":
-                        return IconFontRegular.FileArchive;
+                        return IconFontSolid.FileArchive;
                     case ".avi":
                     case ".mp4":
                     case ".mkv":
                     case ".wmv":
                     case ".mov":
-                        return IconFontRegular.FileVideo;
+                        return IconFontSolid.FileVideo;
                 }
-                return IconFontRegular.File;
+                return IconFontSolid.File;
             }
         }
     }

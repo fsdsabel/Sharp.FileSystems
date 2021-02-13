@@ -11,37 +11,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Fonts\Font Awesome 5 Brands-Regular-400.otf" />
-    <None Remove="Fonts\Font Awesome 5 Free-Regular-400.otf" />
-    <None Remove="Fonts\Font Awesome 5 Free-Solid-900.otf" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="Fonts\Font Awesome 5 Brands-Regular-400.otf" />
-    <EmbeddedResource Include="Fonts\Font Awesome 5 Free-Regular-400.otf" />
-    <EmbeddedResource Include="Fonts\Font Awesome 5 Free-Solid-900.otf" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Prism.Unity.Forms" Version="8.0.0.1909" />
-    <PackageReference Include="Xamarin.Forms" Version="5.0.0.1931" />
+    <PackageReference Include="Xamarin.Forms" Version="5.0.0.2012" />
     <PackageReference Include="Xamarin.Essentials" Version="1.6.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Page Include="Themes\Generic.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\FileSystem.Smb\Sharp.FileSystem.Smb.csproj" />
     <ProjectReference Include="..\..\..\..\Sharp.Filesystem.Smb.Discovery\Sharp.FileSystem.Smb.Discovery.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Update="FileSystem\FileBrowserView.xaml">
-      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
-    </EmbeddedResource>
+    <ProjectReference Include="..\..\..\..\Xamarin\Sharp.FileSystem.Forms\Sharp.FileSystem.Forms.csproj" />
   </ItemGroup>
 </Project>

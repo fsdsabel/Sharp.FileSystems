@@ -1,7 +1,7 @@
-﻿using FileBrowser.Fonts;
+﻿using Sharp.FileSystem.Forms.Fonts;
 using Sharp.FileSystems.Abstractions;
 
-namespace FileBrowser.FileSystem
+namespace Sharp.FileSystem.Forms.ViewModels
 {
     class DirectoryUpItem : DirectoryItem
     {
@@ -12,7 +12,5 @@ namespace FileBrowser.FileSystem
         public override string Name => "..";
 
         public override string Icon => IconFontSolid.LevelUpAlt;
-
-        public override string IconFont => "FAS";
     }
 }

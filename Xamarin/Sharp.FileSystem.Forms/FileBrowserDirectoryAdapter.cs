@@ -1,4 +1,4 @@
-﻿using Prism.Mvvm;
+﻿using Sharp.FileSystem.Forms.ViewModels;
 using Sharp.FileSystems.Abstractions;
 using System;
 using System.Collections;
@@ -7,12 +7,10 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Xamarin.Forms;
 
-namespace FileBrowser.FileSystem
+namespace Sharp.FileSystem.Forms
 {
     public class FileBrowserDirectoryAdapterErrorEventArgs : EventArgs
     {
@@ -35,7 +33,7 @@ namespace FileBrowser.FileSystem
 
         private readonly IFileSystemDiscovery[] _fileSystemDiscoverers;
         private readonly List<IDisposable> _networkDiscoverySubscriptions = new List<IDisposable>();
-        private ViewState _viewState = ViewState.FileSystemListing; 
+        private ViewState _viewState = ViewState.FileSystemListing;
         private FileSystemRootItem _currentRootItem;
 
 
@@ -129,7 +127,7 @@ namespace FileBrowser.FileSystem
         {
             _viewState = ViewState.FileSystemListing;
             foreach (var discovery in _fileSystemDiscoverers)
-            {                
+            {
                 _networkDiscoverySubscriptions.Add(discovery
                     .DiscoverRootDirectoriesContinuous()
                     .Subscribe(OnFileSystemDiscovered));

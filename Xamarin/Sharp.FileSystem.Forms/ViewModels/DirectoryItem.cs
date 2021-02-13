@@ -1,7 +1,7 @@
-﻿using FileBrowser.Fonts;
+﻿using Sharp.FileSystem.Forms.Fonts;
 using Sharp.FileSystems.Abstractions;
 
-namespace FileBrowser.FileSystem
+namespace Sharp.FileSystem.Forms.ViewModels
 {
     class DirectoryItem : FileSystemItem
     {
@@ -12,6 +12,6 @@ namespace FileBrowser.FileSystem
 
         public IDirectoryInfo DirInfo { get; }
 
-        public override string Icon => IconFontRegular.Folder;
+        public override string Icon => IconFontSolid.Folder;
     }
 }
