@@ -1,20 +1,79 @@
-﻿using Sharp.FileSystem.Forms.Fonts;
-using Sharp.FileSystems.Abstractions;
+﻿using Sharp.FileSystems.Abstractions;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Sharp.FileSystem.Forms.ViewModels
 {
-    public class FileSystemRootItem : FileSystemItem
+    /// <summary>
+    /// Searches for file systems, this is the root node
+    /// </summary>
+    public class FileSystemRootItem : FileSystemItemBase
     {
-        public FileSystemRootItem(IFileSystemDiscoveryResult fileSystemDiscoveryResult) : base(null)
+        private readonly IFileSystemDiscovery[] _fileSystemDiscoverers;
+        private readonly List<IDisposable> _networkDiscoverySubscriptions = new List<IDisposable>();
+        private readonly List<FileSystemItemBase> _items = new List<FileSystemItemBase>();
+
+        public override string Name => "/";
+
+        public FileSystemRootItem(params IFileSystemDiscovery[] fileSystemDiscoverers)
         {
-            FileSystemDiscoveryResult = fileSystemDiscoveryResult;
+            _fileSystemDiscoverers = fileSystemDiscoverers;
+            StartDiscovery();
         }
 
-        public IFileSystemDiscoveryResult FileSystemDiscoveryResult { get; }
+        public override Task<IEnumerable<FileSystemItemBase>> EnumerateChildrenAsync()
+        {
+            return Task.FromResult<IEnumerable<FileSystemItemBase>>(_items);
+        }
 
-        public override string Name => FileSystemDiscoveryResult.DisplayName;
+        protected virtual void StartDiscovery()
+        {
+            foreach (var discovery in _fileSystemDiscoverers)
+            {
+                _networkDiscoverySubscriptions.Add(discovery
+                    .DiscoverRootDirectoriesContinuous()
+                    .Subscribe(OnFileSystemDiscovered));
+            }
+        }
 
-        public override string Icon => IconFontSolid.Folder;
+        protected virtual void StopDiscovery()
+        {
+            foreach (var subscription in _networkDiscoverySubscriptions)
+            {
+                subscription.Dispose();
+            }
+            _networkDiscoverySubscriptions.Clear();
+        }     
+
+        protected virtual void OnFileSystemDiscovered(IFileSystemDiscoveryResult result)
+        {
+            lock (_items)
+            {
+                var existing = _items.OfType<FileSystemItem>().FirstOrDefault(f => f.FileSystemDiscoveryResult.Equals(result));
+                if (existing == null)
+                {
+                    _items.Add(CreateFileSystemItem(result));
+                }
+            }
+
+            OnChildrenChanged();
+        }
+
+        protected virtual FileSystemItemBase CreateFileSystemItem(IFileSystemDiscoveryResult discoveryResult)
+        {
+            return new FileSystemItem(this, discoveryResult);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                StopDiscovery();
+            }
+            base.Dispose(disposing);
+        }
 
     }
 }

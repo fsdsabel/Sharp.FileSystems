@@ -58,20 +58,21 @@
         <Setter Property="ControlTemplate">
             <Setter.Value>
                 <ControlTemplate>
-                    <RefreshView x:Name="RefreshView">
+                    <RefreshView IsRefreshing="{TemplateBinding IsRefreshing}"
+                                 Command="{TemplateBinding RefreshCommand}">
                         <Grid>
                             <CollectionView x:Name="Files" 
                                             ItemTemplate="{StaticResource FileSystemItemTemplateSelector}"
                                             BackgroundColor="{TemplateBinding BackgroundColor}"                                            
-                                            SelectedItem="{Binding SelectedItem, Source={RelativeSource AncestorType={x:Type filesystem:FileBrowserView}}}"
+                                            SelectedItem="{TemplateBinding SelectedItem}"
                                             SelectionMode="Single"
-                                            ItemsSource="{Binding Adapter.Items, Source={RelativeSource AncestorType={x:Type filesystem:FileBrowserView}}}" />
+                                            ItemsSource="{TemplateBinding Adapter.Items}"/>
 
-                            <StackLayout IsVisible="{Binding IsBusy, Source={RelativeSource AncestorType={x:Type filesystem:FileBrowserView}}}"
+                            <StackLayout IsVisible="{TemplateBinding IsBusy}"
                              AbsoluteLayout.LayoutBounds="0,0,1,1"
                              AbsoluteLayout.LayoutFlags="All"
-                             BackgroundColor="Gray" Opacity="0.5">
-                                <ActivityIndicator IsRunning="{Binding IsBusy, Source={RelativeSource AncestorType={x:Type filesystem:FileBrowserView}}}"
+                             BackgroundColor="Black" Opacity="0.7">
+                                <ActivityIndicator IsRunning="{TemplateBinding IsBusy}"
                                        HorizontalOptions="CenterAndExpand"
                                        VerticalOptions="CenterAndExpand"/>
                             </StackLayout>

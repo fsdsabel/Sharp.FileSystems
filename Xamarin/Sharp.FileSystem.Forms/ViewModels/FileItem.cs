@@ -1,13 +1,19 @@
 ﻿using Sharp.FileSystem.Forms.Fonts;
 using Sharp.FileSystems.Abstractions;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Sharp.FileSystem.Forms.ViewModels
 {
-    class FileItem : FileSystemItem
+    /// <summary>
+    /// This is a file entry.
+    /// </summary>
+    public class FileItem : FileSystemItemBase
     {
-        public FileItem(IFileInfo fileInfo) : base(fileInfo)
+        public FileItem(IFileInfo fileInfo) 
         {
-            FileInfo = fileInfo;
+            FileInfo = fileInfo ?? throw new System.ArgumentNullException(nameof(fileInfo));
         }
 
         public IFileInfo FileInfo { get; }
@@ -53,6 +59,13 @@ namespace Sharp.FileSystem.Forms.ViewModels
                 }
                 return IconFontSolid.File;
             }
+        }
+
+        public override string Name => FileInfo.Name;
+
+        public override Task<IEnumerable<FileSystemItemBase>> EnumerateChildrenAsync()
+        {
+            return Task.FromResult(Enumerable.Empty<FileSystemItemBase>());
         }
     }
 }

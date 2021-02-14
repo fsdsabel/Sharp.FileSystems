@@ -8,11 +8,11 @@ namespace Sharp.FileSystem.Forms
 {
     public interface IFileBrowserDirectoryAdapter
     {
-        IEnumerable<FileSystemItem> Items { get; }
+        IEnumerable<FileSystemItemBase> Items { get; }
 
-        Task OpenItemAsync(FileSystemItem fileSystemItem);
+        Task OpenItemAsync(FileSystemItemBase fileSystemItem);
 
-        Task SetDirectoryAsync(IDirectoryInfo directoryInfo);
+        Task RefreshAsync();
 
         Task OnErrorAsync(Exception exception);
     }

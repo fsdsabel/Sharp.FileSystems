@@ -98,6 +98,8 @@ namespace Sharp.FileSystem.Smb
         }
         public string Name => Path.GetFileName(FullName);
 
+        public Uri Uri => _uri;
+
         public StreamWriter AppendText()
         {
             var stream = Open(FileMode.Append, FileAccess.Write);

@@ -1,6 +1,7 @@
 ﻿using Sharp.FileSystem.Forms.ViewModels;
 using Sharp.FileSystems.Abstractions;
 using System;
+using System.Windows.Input;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 
@@ -12,7 +13,8 @@ namespace Sharp.FileSystem.Forms
         private bool _isDirectoryChanging;
 
         public FileBrowserView()
-        {            
+        {
+            RefreshCommand = new Command(OnRefreshing);
         }
 
         public Color TextColor
@@ -24,6 +26,33 @@ namespace Sharp.FileSystem.Forms
         public static readonly BindableProperty TextColorProperty = 
             BindableProperty.Create(nameof(TextColor), typeof(Color), typeof(FileBrowserView), Color.Default);
 
+        public ICommand RefreshCommand
+        {
+            get { return (ICommand)GetValue(RefreshCommandProperty); }
+            set { SetValue(RefreshCommandProperty, value); }
+        }
+
+        public static readonly BindableProperty RefreshCommandProperty =
+            BindableProperty.Create(nameof(RefreshCommand), typeof(ICommand), typeof(FileBrowserView));
+
+
+        public ICommand OpenFileCommand
+        {
+            get { return (ICommand)GetValue(OpenFileCommandProperty); }
+            set { SetValue(OpenFileCommandProperty, value); }
+        }
+
+        public static readonly BindableProperty OpenFileCommandProperty =
+            BindableProperty.Create(nameof(OpenFileCommand), typeof(ICommand), typeof(FileBrowserView));
+
+        public object OpenFileCommandParameter
+        {
+            get { return (object)GetValue(OpenFileCommandParameterProperty); }
+            set { SetValue(OpenFileCommandParameterProperty, value); }
+        }
+
+        public static readonly BindableProperty OpenFileCommandParameterProperty =
+            BindableProperty.Create(nameof(OpenFileCommand), typeof(object), typeof(FileBrowserView));
 
         public bool IsBusy
         {
@@ -41,17 +70,9 @@ namespace Sharp.FileSystem.Forms
         }
 
         public static readonly BindableProperty IsRefreshingProperty =
-                BindableProperty.Create(nameof(IsRefreshing), typeof(bool), typeof(FileBrowserView), false, BindingMode.TwoWay,
-                    propertyChanged: OnRefreshingChanged);
+                BindableProperty.Create(nameof(IsRefreshing), typeof(bool), typeof(FileBrowserView), false);
 
-        private static void OnRefreshingChanged(BindableObject bindable, object oldValue, object newValue)
-        {
-            if ((bool)newValue)
-            {
-                ((FileBrowserView)bindable).OnRefreshing(bindable, EventArgs.Empty);
-            }
-        }
-
+        
         public object SelectedItem
         {
             get { return (object)GetValue(SelectedItemProperty); }
@@ -75,42 +96,9 @@ namespace Sharp.FileSystem.Forms
 
         public static readonly BindableProperty AdapterProperty =
                 BindableProperty.Create(nameof(Adapter), typeof(IFileBrowserDirectoryAdapter), typeof(FileBrowserView), null);
-       
-        public IDirectoryInfo Directory
-        {
-            get { return (IDirectoryInfo)GetValue(DirectoryProperty); }
-            set { SetValue(DirectoryProperty, value); }
-        }
+    
 
-        public static readonly BindableProperty DirectoryProperty =
-                BindableProperty.Create(nameof(Directory), typeof(IDirectoryInfo), typeof(FileBrowserView), null,
-                    BindingMode.TwoWay, propertyChanged: OnDirectoryChanged);
-
-        private static void OnDirectoryChanged(BindableObject bindable, object oldValue, object newValue)
-        {
-            ((FileBrowserView)bindable).OnDirectoryChanged((IDirectoryInfo)newValue);
-        }
-
-        private async void OnDirectoryChanged(IDirectoryInfo directoryInfo)
-        {
-            _isDirectoryChanging = true;
-            try
-            {
-                IsBusy = true;
-                await Adapter.SetDirectoryAsync(directoryInfo);
-            }
-            catch (Exception ex)
-            {
-                await Adapter.OnErrorAsync(ex);
-            }
-            finally
-            {
-                IsBusy = false;
-                _isDirectoryChanging = false;
-            }
-        }
-
-        private async void OnRefreshing(object sender, EventArgs e)
+        private async void OnRefreshing()
         {
             if (_isDirectoryChanging || Adapter == null)
             {
@@ -118,7 +106,7 @@ namespace Sharp.FileSystem.Forms
             }
             try
             {
-                await Adapter.SetDirectoryAsync(Directory);
+                await Adapter.RefreshAsync();
             }
             catch (Exception ex)
             {
@@ -135,8 +123,18 @@ namespace Sharp.FileSystem.Forms
             try
             {
                 _isSelecting = true;
-                IsBusy = true;
-                await Adapter.OpenItemAsync(selectedItem as FileSystemItem);
+                if (selectedItem is FileItem fileItem)
+                {
+                    if (OpenFileCommand?.CanExecute(OpenFileCommandParameter) ?? false)
+                    {
+                        OpenFileCommand.Execute(OpenFileCommandParameter);
+                    }
+                }
+                else
+                {
+                    IsBusy = true;
+                    await Adapter.OpenItemAsync(selectedItem as FileSystemItemBase);
+                }
             }
             catch (Exception ex)
             {

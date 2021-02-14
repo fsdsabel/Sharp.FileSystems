@@ -52,14 +52,14 @@ namespace Sharp.FileSystem.Smb
                 var parts = _smbPath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries).ToList();
                 if (parts.Count < 1) return null;
                 parts.RemoveAt(parts.Count - 1);
-                return FileSystem.DirectoryInfo.FromDirectoryName(ChangePathOfCurrentUri(string.Join("/", parts)));
+                return FileSystem.DirectoryInfo.FromDirectoryName(ChangePathOfCurrentUri(string.Join("/", parts)), false);
             }
         }
         public IDirectoryInfo Root
         {
             get
             {
-                return FileSystem.DirectoryInfo.FromDirectoryName(ChangePathOfCurrentUri(""));
+                return FileSystem.DirectoryInfo.FromDirectoryName(ChangePathOfCurrentUri(""), false);
             }
         }
         public IFileSystem FileSystem { get; }
@@ -124,6 +124,8 @@ namespace Sharp.FileSystem.Smb
             set => SetTime(ref _lastWriteTime, value, fi => fi.LastWriteTime = value);
         }
         public string Name => Path.GetFileName(FullName);
+
+        public Uri Uri => _uri;
 
         private SmbDirectoryInfo CreateChildDirectoryInfo(string smbPath)
         {

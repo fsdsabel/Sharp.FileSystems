@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -24,31 +25,97 @@ namespace Sharp.FileSystem.Forms
 
     public class FileBrowserDirectoryAdapter : INotifyPropertyChanged, IFileBrowserDirectoryAdapter
     {
-        enum ViewState
+        /*enum ViewState
         {
             FileSystemListing,
             LogicalDriveListing,
             DirectoryListing
-        }
+        }*/
 
-        private readonly IFileSystemDiscovery[] _fileSystemDiscoverers;
-        private readonly List<IDisposable> _networkDiscoverySubscriptions = new List<IDisposable>();
-        private ViewState _viewState = ViewState.FileSystemListing;
-        private FileSystemRootItem _currentRootItem;
+
+     //   private ViewState _viewState = ViewState.FileSystemListing;
+        private FileSystemItem _currentRootItem;
 
 
         public Func<FileBrowserDirectoryAdapterErrorEventArgs, Task> Error;
+        private FileSystemItemBase _currentDirectory;
+        private IFileSystemDiscovery[] _fileSystemDiscoverers;
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         public FileBrowserDirectoryAdapter(params IFileSystemDiscovery[] fileSystemDiscoverers)
         {
             _fileSystemDiscoverers = fileSystemDiscoverers;
             BindingBase.EnableCollectionSynchronization(_items, null, ObservableCollectionCallback);
+            NavigateToFileSystemItemAsync(CreateRootItem(_fileSystemDiscoverers));
         }
 
+        protected virtual async Task NavigateToFileSystemItemAsync(FileSystemItemBase item)
+        {
+            bool attachChildrenChangedHandler = true;
+            if (_currentDirectory != null && _currentDirectory != item)
+            {
+                _currentDirectory.ChildrenChanged -= OnChildrenChanged;
+                attachChildrenChangedHandler = false;
+            }
+            foreach (var oldItem in _items)
+            {
+                oldItem.Dispose();
+            }
+            var children = SortItems((await item.EnumerateChildrenAsync())).ToArray();
+            lock (_items)
+            {
+                _items.Clear();
+                foreach (var child in children)
+                {
+                    _items.Add(child);
+                }
+            }
+            if (attachChildrenChangedHandler)
+            {
+                item.ChildrenChanged += OnChildrenChanged;
+            }
 
+            _currentDirectory = item;
+            // iOS requires this
+            OnPropertyChanged(nameof(Items));
+        }
 
-        public virtual async Task SetDirectoryAsync(IDirectoryInfo directoryInfo)
+        private void OnChildrenChanged(object sender, EventArgs e)
+        {
+            RefreshAsync();
+        }
+
+        public async Task OpenItemAsync(FileSystemItemBase fileSystemItem)
+        {
+            await NavigateToFileSystemItemAsync(fileSystemItem);
+        }
+
+        public Task RefreshAsync()
+        {
+            return NavigateToFileSystemItemAsync(_currentDirectory);
+        }
+
+     
+        protected virtual IEnumerable<FileSystemItemBase> SortItems(IEnumerable<FileSystemItemBase> items)
+        {
+            return items.OrderBy(i =>
+            {
+                if (i is DirectoryUpItem) return 0;
+                if (i is DirectoryItem) return 1;
+                return 2;
+            }).ThenBy(i => i.Name);
+        }
+
+        protected virtual FileSystemItemBase CreateRootItem(IFileSystemDiscovery[] fileSystemDiscoverers)
+        {
+            return new FileSystemRootItem(fileSystemDiscoverers);
+        }
+    
+
+        /*
+
+        protected virtual async Task SetDirectoryAsync(IDirectoryInfo directoryInfo)
         {
             if (directoryInfo == null)
             {
@@ -80,7 +147,7 @@ namespace Sharp.FileSystem.Forms
                         }
                     }
                     items = SortItems(items).ToList();
-                    var up = CreateDirectoryUpFileSystemItem(directoryInfo.Parent);
+                    var up = CreateDirectoryUpFileSystemItem(CurrentDirectory);
                     if (up != null)
                     {
                         items.Insert(0, up);
@@ -100,9 +167,17 @@ namespace Sharp.FileSystem.Forms
             return items.OrderBy(i => i is DirectoryItem ? 0 : 1).ThenBy(i => i.Name);
         }
 
-        protected virtual FileSystemItem CreateDirectoryUpFileSystemItem(IDirectoryInfo directoryInfo)
+        protected virtual FileSystemItem CreateDirectoryUpFileSystemItem(FileSystemItem parentItem)
         {
-            return new DirectoryUpItem(directoryInfo);
+            if(parentItem is DirectoryItem directoryItem)
+            {
+                return new DirectoryUpItem(directoryItem.DirInfo);
+            }
+            if (parentItem is FileSystemRootItem rootItem)
+            {
+                //return new DirectoryUpItem(rootItem.FileSystemDiscoveryResult.);
+            }
+            return new DirectoryUpItem(null);
         }
 
         protected virtual FileSystemItem CreateFileSystemItem(IFileSystemInfo fileSystemInfo)
@@ -126,6 +201,7 @@ namespace Sharp.FileSystem.Forms
         public virtual void StartDiscovery()
         {
             _viewState = ViewState.FileSystemListing;
+            CurrentDirectory = null;
             foreach (var discovery in _fileSystemDiscoverers)
             {
                 _networkDiscoverySubscriptions.Add(discovery
@@ -162,7 +238,7 @@ namespace Sharp.FileSystem.Forms
                 lock (_items)
                 {
                     _items.Clear();
-                    _items.Add(new DirectoryUpItem(null));
+                    _items.Add(CreateDirectoryUpFileSystemItem(null));
                     foreach (var drive in drives)
                     {
                         var dirinfo = fsdr.FileSystem.DirectoryInfo.FromDirectoryName(fsdr.FileSystem.Path.Combine(fsdr.RootPath, drive), false);
@@ -170,6 +246,7 @@ namespace Sharp.FileSystem.Forms
                     }
                 }
                 OnPropertyChanged(nameof(Items));
+                CurrentDirectory = rootItem;
             }
             catch
             {
@@ -182,11 +259,13 @@ namespace Sharp.FileSystem.Forms
             if (fileSystemItem is DirectoryItem directoryItem)
             {
                 await SetDirectoryAsync(directoryItem.DirInfo);
+                CurrentDirectory = new DirectoryItem(directoryItem.DirInfo); // may be DirectoryUpItem
             }
             else if (fileSystemItem is FileSystemRootItem rootItem)
             {
                 _currentRootItem = rootItem;
                 SetDiscoveredItems(rootItem);
+                CurrentDirectory = fileSystemItem;
             }
         }
 
@@ -199,15 +278,37 @@ namespace Sharp.FileSystem.Forms
             _networkDiscoverySubscriptions.Clear();
         }
 
-
-
-
-        private readonly ObservableCollection<FileSystemItem> _items = new ObservableCollection<FileSystemItem>();
-
-
-        public IEnumerable<FileSystemItem> Items
+        public virtual async Task RefreshAsync()
         {
-            get => _items;
+            await OpenItemAsync(CurrentDirectory);
+        }*/
+
+
+        private readonly ObservableCollection<FileSystemItemBase> _items = new ObservableCollection<FileSystemItemBase>();
+
+
+        public IEnumerable<FileSystemItemBase> Items
+        {
+            get
+            {
+                lock (_items)
+                {
+                    return _items.ToArray();
+                }
+            }
+        }
+
+        public virtual FileSystemItemBase CurrentDirectory
+        {
+            get => _currentDirectory;
+            set
+            {
+                if(_currentDirectory != value)
+                {
+                    _currentDirectory = value;
+                    OnPropertyChanged();
+                }
+            }
         }
 
         private void ObservableCollectionCallback(IEnumerable collection, object context, Action accessMethod, bool writeAccess)
@@ -220,9 +321,12 @@ namespace Sharp.FileSystem.Forms
 
         protected virtual void Dispose(bool disposing)
         {
-            if (disposing)
+           if(disposing)
             {
-                StopDiscovery();
+                foreach(var item in _items)
+                {
+                    item.Dispose();
+                }
             }
         }
 
@@ -240,5 +344,6 @@ namespace Sharp.FileSystem.Forms
         {
             await Error?.Invoke(new FileBrowserDirectoryAdapterErrorEventArgs(exception));
         }
+
     }
 }

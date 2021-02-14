@@ -21,7 +21,12 @@ namespace Sharp.FileSystem.Smb.Internal
             _connectionKey = MakeKey(path);
             Client = new SMB2Client();
             var uri = new Uri(path);
-            IPAddress ip = null;
+            IPAddress.TryParse(uri.Host, out var ip);
+            if(ip?.AddressFamily != System.Net.Sockets.AddressFamily.InterNetwork)
+            {
+                ip = null;
+            }
+
             int retry = 0;
             while (ip == null && retry < 5)
             {

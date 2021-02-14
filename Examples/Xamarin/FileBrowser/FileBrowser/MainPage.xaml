@@ -9,7 +9,9 @@
         <Frame BackgroundColor="#2196F3" Padding="0,44,0,14" CornerRadius="0">
             <Label Text="FileSystem Browser" HorizontalTextAlignment="Center" TextColor="White" FontSize="24"/>
         </Frame>
-        <filesystem:FileBrowserView Adapter="{Binding Adapter}" />
+        <filesystem:FileBrowserView Adapter="{Binding Adapter}"
+                                    OpenFileCommand="{Binding OpenFileCommand}"
+                                    OpenFileCommandParameter="{Binding Path=SelectedItem, Source={RelativeSource Self}}"/>
     </StackLayout>
 
 </ContentPage>

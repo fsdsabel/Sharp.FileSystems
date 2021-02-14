@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <Reference Include="SMBLibrary">
-      <HintPath>..\..\..\Projekte_NoBackup\SMBLibrary\SMBLibrary\bin\Debug\netstandard2.0\SMBLibrary.dll</HintPath>
+      <HintPath>Q:\Projekte_NoBackup\SMBLibrary\SMBLibrary\bin\Debug\netstandard2.0\SMBLibrary.dll</HintPath>
     </Reference>
   </ItemGroup>
 

@@ -1,20 +1,46 @@
-﻿using Sharp.FileSystems.Abstractions;
+﻿using Sharp.FileSystem.Forms.Fonts;
+using Sharp.FileSystems.Abstractions;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Sharp.FileSystem.Forms.ViewModels
 {
-    public abstract class FileSystemItem
+    /// <summary>
+    /// Represents a file system entry that lists all logical drives
+    /// </summary>
+    public class FileSystemItem : FileSystemItemBase
     {
-        private readonly IFileSystemInfo _fileSystemInfo;
+        private readonly FileSystemRootItem _parent;
 
-        protected FileSystemItem(IFileSystemInfo fileSystemInfo)
+        public FileSystemItem(FileSystemRootItem parent, IFileSystemDiscoveryResult fileSystemDiscoveryResult)
         {
-            _fileSystemInfo = fileSystemInfo;
+            _parent = parent;
+            FileSystemDiscoveryResult = fileSystemDiscoveryResult;
         }
 
-        public virtual string Name => _fileSystemInfo.Name;
+        public IFileSystemDiscoveryResult FileSystemDiscoveryResult { get; }
 
-        public virtual string Icon { get; }
+        public override string Name => FileSystemDiscoveryResult.DisplayName;
 
-        public virtual string IconFont => "FAS";
+        public override string Icon => IconFontSolid.Folder;
+
+
+        public override async Task<IEnumerable<FileSystemItemBase>> EnumerateChildrenAsync()
+        {
+            return await Task.Run(() =>
+            {
+                var fsdr = FileSystemDiscoveryResult;
+                var drives = fsdr.FileSystem.Directory.GetLogicalDrives(fsdr.RootPath);
+                var result = new List<FileSystemItemBase>();
+                result.Add(new DirectoryUpItem(_parent));
+
+                foreach (var drive in drives)
+                {
+                    var dirinfo = fsdr.FileSystem.DirectoryInfo.FromDirectoryName(fsdr.FileSystem.Path.Combine(fsdr.RootPath, drive), false);
+                    result.Add(CreateFileSystemItem(dirinfo, this));
+                }
+                return result;
+            }).ConfigureAwait(false);
+        }        
     }
 }

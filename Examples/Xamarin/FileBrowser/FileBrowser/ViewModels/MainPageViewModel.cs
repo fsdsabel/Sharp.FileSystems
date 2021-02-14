@@ -1,14 +1,12 @@
 ﻿using Prism.Mvvm;
 using Prism.Services;
 using Sharp.FileSystem.Forms;
+using Sharp.FileSystem.Forms.ViewModels;
 using Sharp.FileSystem.Smb;
 using Sharp.FileSystem.Smb.Discovery;
-using Sharp.FileSystems.Abstractions;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Input;
+using Xamarin.Forms;
 
 namespace FileBrowser.ViewModels
 {
@@ -21,10 +19,14 @@ namespace FileBrowser.ViewModels
         {
             _pageDialogService = pageDialogService;
             _fileSystem = new SmbFileSystem();
-            //CurrentDirectory = _fileSystem.DirectoryInfo.FromDirectoryName("smb://corenode/shared");
             Adapter = new FileBrowserDirectoryAdapter(new SmbFileSystemDiscovery());
             Adapter.Error = OnFileBrowserError;
-            Adapter.StartDiscovery();
+            OpenFileCommand = new Command<FileItem>(OnOpenFile);
+        }
+
+        private async void OnOpenFile(FileItem file)
+        {
+            await _pageDialogService.DisplayAlertAsync("Open file", $"You clicked on the file '{file.FileInfo.Uri}'", "OK");
         }
 
         private async Task OnFileBrowserError(FileBrowserDirectoryAdapterErrorEventArgs e)
@@ -32,14 +34,7 @@ namespace FileBrowser.ViewModels
             await _pageDialogService.DisplayAlertAsync("Error", e.Exception.Message, "Continue");
         }
 
-        private IDirectoryInfo _currentDirectory;      
-
-        public IDirectoryInfo CurrentDirectory
-        {
-            get => _currentDirectory; 
-            set => SetProperty(ref _currentDirectory, value);
-        }
-
+        public ICommand OpenFileCommand { get; }
 
         public FileBrowserDirectoryAdapter Adapter { get; }
     }

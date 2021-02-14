@@ -25,6 +25,10 @@ namespace Sharp.FileSystems.Abstractions
         string Extension { get; }
         /// <inheritdoc cref="FileSystemInfo.FullName"/>
         string FullName { get; }
+        /// <summary>
+        /// The full uri of the filesystem item.
+        /// </summary>
+        Uri Uri { get; }
         /// <inheritdoc cref="FileSystemInfo.LastAccessTime"/>
         DateTime LastAccessTime { get; set; }
         /// <inheritdoc cref="FileSystemInfo.LastAccessTimeUtc"/>
